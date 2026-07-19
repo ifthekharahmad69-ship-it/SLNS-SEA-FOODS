@@ -10,9 +10,10 @@ function getAdminApp() {
     return getApps()[0];
   }
 
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
-    ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
+  const rawKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY || '';
+  const privateKey = rawKey
+    .replace(/^["']|["']$/g, '')   // strip surrounding quotes if any
+    .replace(/\\n/g, '\n');         // convert \n text to real newlines
 
   return initializeApp({
     credential: cert({
