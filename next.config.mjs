@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Increase static page generation timeout (default 60s is too short for Firebase)
+  staticPageGenerationTimeout: 180,
   images: {
     remotePatterns: [
       // Cloudinary — product images uploaded by admin

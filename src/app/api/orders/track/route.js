@@ -6,6 +6,8 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
+export const dynamic = 'force-dynamic'; // uses request.url — cannot be static
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);

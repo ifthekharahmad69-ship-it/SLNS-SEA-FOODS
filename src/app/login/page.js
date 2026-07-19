@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
-export default function LoginPage() {
+// Inner component that uses useSearchParams — must be inside Suspense
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/admin';
@@ -182,5 +183,18 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Default export wraps in Suspense so useSearchParams works at build time
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--accent) 0%, #0a3a5c 100%)' }}>
+        <div style={{ color: 'white', fontSize: '1.1rem' }}>🦐 Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
