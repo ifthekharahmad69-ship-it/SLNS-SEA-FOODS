@@ -7,10 +7,11 @@ import { useProducts } from '@/lib/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 const CATEGORY_META = {
-  fish: { title: 'Fresh Fish', icon: '🐟', desc: 'Wild-caught & farm-fresh fish — whole, fillets, and ready dishes' },
-  prawns: { title: 'Prawns', icon: '🦐', desc: 'Tiger prawns, vannamei & more — cleaned and ready to cook' },
-  crabs: { title: 'Crabs', icon: '🦀', desc: 'Live & cleaned crabs — mud crabs, blue crabs, flower crabs' },
-  dishes: { title: 'Ready Dishes', icon: '🍽️', desc: 'Authentic Andhra seafood dishes cooked fresh and delivered hot' },
+  fish:        { title: 'Fresh Fish',    icon: '🐟', desc: 'Wild-caught & farm-fresh fish — whole, fillets, and ready dishes' },
+  prawns:      { title: 'Prawns',        icon: '🦐', desc: 'Tiger prawns, vannamei & more — cleaned and ready to cook' },
+  crabs:       { title: 'Crabs',         icon: '🦀', desc: 'Live & cleaned crabs — mud crabs, blue crabs, flower crabs' },
+  'dry-seafood': { title: 'Dry Seafood', icon: '🌊', desc: 'Sun-dried & preserved seafood — traditional flavours packed with nutrition' },
+  dishes:      { title: 'Ready Dishes',  icon: '🍽️', desc: 'Authentic Andhra seafood dishes cooked fresh and delivered hot' },
 };
 
 export default function ShopPage() {
@@ -38,7 +39,7 @@ export default function ShopPage() {
     return list;
   }, [slug, typeFilter, sortBy, products]);
 
-  const cats = ['fish', 'prawns', 'crabs', 'dishes'];
+  const cats = ['fish', 'prawns', 'crabs', 'dry-seafood', 'dishes'];
 
   return (
     <div className="page-wrapper">

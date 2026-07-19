@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
   { id: 'orders', label: '📋 Orders', icon: '📋' },
   { id: 'products', label: '🐟 Products', icon: '🐟' },
+  { id: 'categories', label: '📂 Categories', icon: '📂' },
   { id: 'reviews', label: '⭐ Reviews', icon: '⭐' },
   { id: 'promos', label: '🎁 Promos', icon: '🎁' },
 ];
@@ -109,6 +110,7 @@ export default function AdminPage() {
   const [allProducts, setAllProducts] = useState(staticProducts);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [productSearch, setProductSearch] = useState('');
+  const [productCategory, setProductCategory] = useState('all');
   const [editingPrice, setEditingPrice] = useState(null);
   const [editPriceValue, setEditPriceValue] = useState('');
   const [togglingStock, setTogglingStock] = useState(null);
@@ -1350,6 +1352,221 @@ function PromosTab() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Categories Tab ─────────────────────────────────────────────────────
+function CategoriesTab() {
+  const DEFAULT_CATS = [
+    { id: 'prawns',      name: 'Prawns',       slug: 'prawns',      icon: '🦐', description: 'Fresh White & Tiger Prawns', image: '/images/prawn/farhad-ibrahimzade-JocD18QpAkY-unsplash.jpg', _static: true },
+    { id: 'fish',        name: 'Fish',         slug: 'fish',        icon: '🐟', description: 'Fresh sea fish — Mullet, Seer Fish, Black Pomfret', image: '/images/fish/camila-igisk-yFU8qIDo9s4-unsplash.jpg', _static: true },
+    { id: 'crabs',       name: 'Crabs',        slug: 'crabs',       icon: '🦀', description: 'Premium live & cleaned crabs', image: '/images/crab/pexels-enginakyurt-17924397.jpg', _static: true },
+    { id: 'dry-seafood', name: 'Dry Seafood',  slug: 'dry-seafood', icon: '🌊', description: 'Sun-dried & preserved seafood', image: '/images/prawn/pexels-mahmudul-hasan-2149253486-32230044.jpg', _static: true },
+    { id: 'dishes',      name: 'Ready Dishes', slug: 'dishes',      icon: '🍽️', description: 'Cooked seafood dishes ready to serve', image: '/images/fish/pexels-nithin-mohan-2646938-21926675.jpg', _static: true },
+  ];
+
+  const EMPTY_CAT = { name: '', slug: '', icon: '🐟', description: '', image: '' };
+
+  const [cats, setCats] = useState([...DEFAULT_CATS]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newCat, setNewCat] = useState(EMPTY_CAT);
+  const [adding, setAdding] = useState(false);
+  const [editCat, setEditCat] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.categories && data.categories.length > 0) {
+          const firestoreOnly = data.categories.filter(
+            (fc) => !DEFAULT_CATS.find((d) => d.id === fc.id)
+          );
+          setCats([...DEFAULT_CATS, ...firestoreOnly]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!newCat.name.trim()) return;
+    setAdding(true);
+    const slug = newCat.slug.trim() || newCat.name.toLowerCase().replace(/\s+/g, '-');
+    const payload = { ...newCat, slug, id: slug };
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      setCats((prev) => [...prev, { ...payload, id: data.id || slug }]);
+      setNewCat(EMPTY_CAT);
+      setShowAdd(false);
+    } catch (err) {
+      alert('Failed to add: ' + err.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await fetch(`/api/categories/${editCat.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editCat),
+      });
+      setCats((prev) => prev.map((c) => c.id === editCat.id ? { ...editCat } : c));
+      setEditCat(null);
+    } catch (err) {
+      alert('Failed to save: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (cat) => {
+    if (cat._static) { alert('Built-in categories cannot be deleted. You can edit their details.'); return; }
+    if (!confirm(`Delete category "${cat.name}"? Products will NOT be deleted.`)) return;
+    setDeleting(cat.id);
+    try {
+      await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
+      setCats((prev) => prev.filter((c) => c.id !== cat.id));
+    } catch (err) {
+      alert('Failed to delete: ' + err.message);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const inputStyle = { padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none', width: '100%' };
+  const labelStyle = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' };
+
+  return (
+    <>
+      <div className="admin-header">
+        <h1>📂 Categories <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>({cats.length} total)</span></h1>
+        <button className="btn btn-primary btn-sm" onClick={() => { setShowAdd((v) => !v); setEditCat(null); }} id="add-cat-btn">
+          {showAdd ? '✕ Cancel' : '+ Add Category'}
+        </button>
+      </div>
+
+      {showAdd && (
+        <form onSubmit={handleAdd} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+          <h3 style={{ gridColumn: '1/-1', margin: 0, fontSize: '1rem' }}>New Category</h3>
+          <div>
+            <label style={labelStyle}>Name *</label>
+            <input style={inputStyle} placeholder="e.g. Lobster" value={newCat.name} onChange={(e) => setNewCat((c) => ({ ...c, name: e.target.value }))} required />
+          </div>
+          <div>
+            <label style={labelStyle}>Slug (URL key)</label>
+            <input style={inputStyle} placeholder="e.g. lobster" value={newCat.slug} onChange={(e) => setNewCat((c) => ({ ...c, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))} />
+          </div>
+          <div>
+            <label style={labelStyle}>Icon Emoji</label>
+            <input style={{ ...inputStyle, width: 80, fontSize: '1.4rem', textAlign: 'center' }} placeholder="🦞" value={newCat.icon} onChange={(e) => setNewCat((c) => ({ ...c, icon: e.target.value }))} maxLength={4} />
+          </div>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={labelStyle}>Description</label>
+            <input style={inputStyle} placeholder="Short description shown to customers" value={newCat.description} onChange={(e) => setNewCat((c) => ({ ...c, description: e.target.value }))} />
+          </div>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={labelStyle}>Image URL</label>
+            <input style={inputStyle} placeholder="/images/... or https://..." value={newCat.image} onChange={(e) => setNewCat((c) => ({ ...c, image: e.target.value }))} />
+          </div>
+          <div style={{ gridColumn: '1/-1', display: 'flex', gap: '0.75rem' }}>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={adding}>{adding ? 'Adding...' : 'Add Category'}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowAdd(false); setNewCat(EMPTY_CAT); }}>Cancel</button>
+          </div>
+        </form>
+      )}
+
+      {editCat && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setEditCat(null)}>
+          <form onSubmit={handleSaveEdit} onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '100%', maxWidth: 520, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            <h3 style={{ gridColumn: '1/-1', margin: 0 }}>Edit: {editCat.name}</h3>
+            <div>
+              <label style={labelStyle}>Name</label>
+              <input style={inputStyle} value={editCat.name} onChange={(e) => setEditCat((c) => ({ ...c, name: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={labelStyle}>Icon Emoji</label>
+              <input style={{ ...inputStyle, fontSize: '1.4rem', textAlign: 'center' }} value={editCat.icon} onChange={(e) => setEditCat((c) => ({ ...c, icon: e.target.value }))} maxLength={4} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Description</label>
+              <input style={inputStyle} value={editCat.description} onChange={(e) => setEditCat((c) => ({ ...c, description: e.target.value }))} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Image URL</label>
+              <input style={inputStyle} value={editCat.image} onChange={(e) => setEditCat((c) => ({ ...c, image: e.target.value }))} />
+              {editCat.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={editCat.image} alt="preview" style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 8, marginTop: 8 }} />
+              )}
+            </div>
+            {editCat._static && (
+              <p style={{ gridColumn: '1/-1', fontSize: '0.8rem', color: '#d97706', background: 'rgba(245,158,11,0.1)', padding: '8px 12px', borderRadius: 8, margin: 0 }}>
+                Built-in category. Name and description changes update display only.
+              </p>
+            )}
+            <div style={{ gridColumn: '1/-1', display: 'flex', gap: '0.75rem' }}>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditCat(null)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading...</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem', marginTop: '1rem' }}>
+          {cats.map((cat) => (
+            <div key={cat.id} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1.5px solid var(--border)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ height: 130, background: 'var(--bg-elevated)', position: 'relative', overflow: 'hidden' }}>
+                {cat.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={cat.image} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>{cat.icon}</div>
+                )}
+                {cat._static && (
+                  <span style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(15,76,117,0.85)', color: 'white', fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>BUILT-IN</span>
+                )}
+              </div>
+              <div style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '1.4rem' }}>{cat.icon}</span>
+                  <strong style={{ fontSize: '1rem' }}>{cat.name}</strong>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', lineHeight: 1.5 }}>{cat.description || 'No description'}</p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginBottom: '1rem' }}>/{cat.slug}</p>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => { setEditCat({ ...cat }); setShowAdd(false); }} className="btn btn-sm btn-ghost" style={{ flex: 1 }} id={`edit-cat-${cat.id}`}>Edit</button>
+                  <button
+                    onClick={() => handleDelete(cat)}
+                    disabled={deleting === cat.id}
+                    className="btn btn-sm"
+                    style={{ background: cat._static ? 'var(--bg-elevated)' : 'rgba(239,68,68,0.1)', color: cat._static ? 'var(--text-muted)' : '#ef4444', border: 'none', cursor: cat._static ? 'not-allowed' : 'pointer' }}
+                    id={`del-cat-${cat.id}`}
+                    title={cat._static ? 'Built-in categories cannot be deleted' : 'Delete category'}
+                  >{deleting === cat.id ? '...' : 'Delete'}</button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </>

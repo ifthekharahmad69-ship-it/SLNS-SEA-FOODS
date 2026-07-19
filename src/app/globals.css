@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 /* ======================== DESIGN TOKENS ======================== */
 :root {
@@ -982,27 +982,70 @@ ul, ol {
 }
 
 .filter-tab {
-  padding: 10px 22px;
+  padding: 8px 18px;
   border-radius: var(--radius-full);
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.88rem;
   white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-out);
-  border: 2px solid var(--border);
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
   color: var(--text-secondary);
-  background: var(--bg-card);
+  background: var(--bg-elevated);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .filter-tab:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  color: var(--text-primary);
+  border-color: var(--border);
 }
 
+/* Per-category colored pills when active */
+.filter-tab[href*="fish"].active,
+.filter-tab[href*="fish"]:not([href*="dry"]):not([href*="dish"]).active {
+  background: linear-gradient(135deg, #0e7490, #0284c7);
+  color: white; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(14,116,144,0.4);
+}
+.filter-tab[href*="prawns"].active {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  color: white; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(217,119,6,0.4);
+}
+.filter-tab[href*="crabs"].active {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: white; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(220,38,38,0.4);
+}
+.filter-tab[href*="dishes"].active {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.4);
+}
+.filter-tab[href*="dry-seafood"].active {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(5,150,105,0.4);
+}
+
+/* Fallback active (for non-href tabs like type filters) */
 .filter-tab.active {
   background: var(--accent);
   color: white;
-  border-color: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(15,76,117,0.35);
 }
+
+/* Hover color hints per category */
+.filter-tab[href*="fish"]:not([href*="dry"]):not([href*="dish"]):hover { color: #0284c7; border-color: #bae6fd; }
+.filter-tab[href*="prawns"]:hover { color: #d97706; border-color: #fde68a; }
+.filter-tab[href*="crabs"]:hover  { color: #dc2626; border-color: #fecaca; }
+.filter-tab[href*="dishes"]:hover { color: #7c3aed; border-color: #ddd6fe; }
+.filter-tab[href*="dry-seafood"]:hover { color: #059669; border-color: #a7f3d0; }
 
 /* ======================== TRUST SECTION ======================== */
 .trust-grid {
@@ -2174,7 +2217,7 @@ ul, ol {
   font-size: 0.65rem !important;
 }
 
-/* Homepage Find Us section — responsive */
+/* Homepage Find Us section â€” responsive */
 #find-us .container > div {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2208,7 +2251,7 @@ ul, ol {
 
 
 /* ========================================================================
-   RESPONSIVE DESIGN SYSTEM � Comprehensive improvements for all breakpoints
+   RESPONSIVE DESIGN SYSTEM — Comprehensive improvements for all breakpoints
    Mobile (< 480px) | Tablet (480-1024px) | Desktop (>= 1024px)
    ======================================================================== */
 
@@ -2288,7 +2331,7 @@ ul, ol {
   .checkout-form { padding: 1rem; }
 }
 
-/* ADMIN � Mobile responsive overhaul */
+/* ADMIN — Mobile responsive overhaul */
 .admin-mobile-tabs { display: none; }
 
 @media (max-width: 768px) {
