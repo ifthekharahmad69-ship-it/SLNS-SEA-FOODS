@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
+import AuthGateModal from '@/components/AuthGateModal';
 
 function getDiscount(price, original) {
   return Math.round(((original - price) / original) * 100);
@@ -21,7 +23,9 @@ function getBadge(product, t) {
 export default function ProductCard({ product }) {
   const { addItem, items } = useCart();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [added, setAdded] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const discount = getDiscount(product.price, product.originalPrice);
   const badge = getBadge(product, t);
   const inCart = items.some((i) => i.id === product.id);
@@ -30,12 +34,15 @@ export default function ProductCard({ product }) {
     e.preventDefault();
     e.stopPropagation();
     if (!product.inStock) return;
+    if (!user) { setShowAuth(true); return; } // 🔒 require login
     addItem(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
+
   return (
+    <>
     <Link href={`/product/${product.id}`} className="product-card" id={`product-${product.id}`}>
       {/* Image */}
       <div className="product-card-image">
@@ -123,5 +130,14 @@ export default function ProductCard({ product }) {
         </button>
       </div>
     </Link>
+
+    {/* Auth gate — shows when guest tries to add to cart */}
+    {showAuth && (
+      <AuthGateModal
+        message="Sign in to add items to your cart"
+        onClose={() => setShowAuth(false)}
+      />
+    )}
+  </>
   );
 }

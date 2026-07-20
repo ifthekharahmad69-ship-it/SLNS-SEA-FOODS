@@ -7,14 +7,17 @@ import QRCode from 'react-qr-code';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import AuthGateModal from '@/components/AuthGateModal';
 
 const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || '7995177216@ybl';
 const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Amma Sea Foods';
 
 export default function CheckoutPage() {
   const { items, subtotal, savings, delivery, total, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { t } = useLanguage();
+  const [showAuth, setShowAuth] = useState(false);
+
 
   // ── State ──────────────────────────────────────────────────────────────────
   // step: 1 = delivery form | 2 = confirm | 'upi' = QR pay | 3 = success
@@ -187,6 +190,26 @@ export default function CheckoutPage() {
 
   // ── UPI deep-link for QR ─────────────────────────────────────────────────────
   const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${finalTotal}&cu=INR&tn=${encodeURIComponent('Order ' + confirmedOrderId)}`;
+
+  // ── Auth guard ─────────────────────────────────────────────────────────────
+  if (!loading && !user) {
+    return (
+      <div className="page-wrapper">
+        <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '1rem' }}>
+          <div style={{ fontSize: '3rem' }}>🔒</div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: 'var(--text-primary)' }}>Sign in to Checkout</h2>
+          <p style={{ color: 'var(--text-muted)', maxWidth: 320 }}>Create a free account or sign in to place your order and track it.</p>
+          <button
+            onClick={() => setShowAuth(true)}
+            style={{ background: 'linear-gradient(135deg,var(--accent),#1a6fa8)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', padding: '12px 28px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
+          >
+            🦐 Sign In / Create Account
+          </button>
+          {showAuth && <AuthGateModal message="Sign in to place your order" onClose={() => setShowAuth(false)} />}
+        </div>
+      </div>
+    );
+  }
 
   // ── Empty cart guard ─────────────────────────────────────────────────────────
   if (items.length === 0 && step !== 3) {
