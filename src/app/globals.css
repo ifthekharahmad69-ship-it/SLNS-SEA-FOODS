@@ -83,6 +83,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -91,6 +93,13 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+main {
+  width: 100%;
   overflow-x: hidden;
 }
 
@@ -146,6 +155,12 @@ ul, ol {
 
 .section {
   padding: var(--space-3xl) 0;
+}
+
+@media (max-width: 480px) {
+  .section { padding: 2.5rem 0; }
+  .section-header { margin-bottom: 1.25rem; }
+  .section-subtitle { font-size: 0.95rem; padding: 0 1rem; }
 }
 
 .section-header {
@@ -439,11 +454,13 @@ ul, ol {
 .hero {
   position: relative;
   width: 100%;
+  max-width: 100%;
   min-height: 520px;
   display: flex;
   align-items: center;
   overflow: hidden;
   background: var(--bg-dark);
+  box-sizing: border-box;
 }
 
 .hero-bg {
@@ -469,9 +486,11 @@ ul, ol {
 .hero-content {
   position: relative;
   z-index: 2;
+  width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
   padding: var(--space-4xl) var(--space-lg);
+  box-sizing: border-box;
 }
 
 .hero-badge {
@@ -2271,17 +2290,21 @@ ul, ol {
 }
 
 /* Container xs */
+@media (max-width: 480px) {
+  .container { padding: 0 1.25rem; width: 100%; box-sizing: border-box; }
+}
 @media (max-width: 400px) {
-  .container { padding: 0 10px; }
+  .container { padding: 0 0.875rem; }
 }
 
 /* Hero xs */
 @media (max-width: 480px) {
-  .hero { min-height: 380px; }
-  .hero-content { padding: 2rem 1rem; }
+  .hero { min-height: 380px; width: 100%; max-width: 100vw; }
+  .hero-content { padding: 2rem 1.25rem; width: 100%; max-width: 100%; }
   .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; }
   .hero-stat .number { font-size: 1.25rem; }
-  .hero-actions .btn { flex: 1; padding: 11px 16px; font-size: 0.88rem; }
+  .hero-actions { flex-direction: column; gap: 0.75rem; }
+  .hero-actions .btn { width: 100%; padding: 13px 16px; font-size: 0.9rem; justify-content: center; }
 }
 
 /* Category grid: tablet 2 col, mobile 2 col, xs 1 col */
