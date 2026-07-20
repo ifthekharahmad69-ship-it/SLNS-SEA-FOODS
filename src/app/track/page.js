@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import MapWrapper from '@/components/MapWrapper';
@@ -32,7 +32,8 @@ function buildTimeline(status, t) {
   }));
 }
 
-export default function TrackPage() {
+// Inner component wrapped in Suspense for useSearchParams
+function TrackForm() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [orderId, setOrderId] = useState('');
@@ -339,5 +340,18 @@ export default function TrackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Default export wraps in Suspense so useSearchParams works at build time
+export default function TrackPage() {
+  return (
+    <Suspense fallback={
+      <div className="page-wrapper" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--text-muted)' }}>Loading tracking details...</div>
+      </div>
+    }>
+      <TrackForm />
+    </Suspense>
   );
 }
