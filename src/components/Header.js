@@ -15,7 +15,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { itemCount } = useCart();
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,7 +127,9 @@ export default function Header() {
             </Link>
 
             {/* User Avatar / Sign In — clearly visible on ALL screen sizes */}
-            {user ? (
+            {loading ? (
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }} />
+            ) : user ? (
               <div ref={dropRef} style={{ position: 'relative' }}>
                 <button
                   className="icon-btn"
