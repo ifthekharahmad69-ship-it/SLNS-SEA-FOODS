@@ -82,9 +82,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ── Google Sign-In ──────────────────────────────────────────────
-  // Seamless 1-tap Google login
+  // Shows all available Google emails on device, automatically signs in on tap
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     if (isMobile()) {
       await signInWithRedirect(auth, provider);
