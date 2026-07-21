@@ -26,13 +26,19 @@ export default function CustomerReviewsShowcase() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/reviews')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) setReviews(d.reviews);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const fetchApprovedReviews = () => {
+      fetch('/api/reviews')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success) setReviews(d.reviews);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    };
+
+    fetchApprovedReviews();
+    const interval = setInterval(fetchApprovedReviews, 15000); // Live sync every 15s
+    return () => clearInterval(interval);
   }, []);
 
   if (loading || reviews.length === 0) return null;
