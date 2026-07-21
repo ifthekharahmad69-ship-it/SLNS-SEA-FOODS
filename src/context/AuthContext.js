@@ -5,6 +5,8 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -14,11 +16,24 @@ import { auth } from '@/lib/firebase';
 
 const AuthContext = createContext(null);
 
+// Detect mobile browsers — popups are blocked/broken on most mobile browsers
+function isMobile() {
+  if (typeof window === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect result when user comes back from Google sign-in page
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) setUser(result.user);
+      })
+      .catch(() => {}); // ignore redirect errors silently
+
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -27,10 +42,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ── Google Sign-In ──────────────────────────────────────────────
+  // Uses redirect on mobile (no popup blocking), popup on desktop
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    if (isMobile()) {
+      // On mobile: redirect to Google, then come back automatically signed in
+      await signInWithRedirect(auth, provider);
+      return; // Page will redirect, no result here
+    } else {
+      // On desktop: open a popup
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    }
   };
 
   // ── Email / Password ────────────────────────────────────────────
