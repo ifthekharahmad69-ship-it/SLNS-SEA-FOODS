@@ -456,6 +456,24 @@ export default function AdminPage() {
                 ✅ App Installed
               </p>
             )}
+
+            {/* Designer Credit */}
+            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Designed & Developed by
+              </p>
+              <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#38bdf8', margin: '2px 0 4px' }}>
+                Sameer Khan
+              </p>
+              <a
+                href="https://wa.me/917981502973?text=Hi%20Sameer%2C%20I%20saw%20your%20design%20on%20Amma%20Admin!"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '0.78rem', color: '#4ade80', fontWeight: 600, textDecoration: 'none' }}
+              >
+                📞 +91 79815 02973
+              </a>
+            </div>
           </div>
         </aside>
 

@@ -261,6 +261,16 @@ export default function Header() {
               🛒 {t('nav.cart')} {itemCount > 0 && <span className="cart-badge" style={{ position: 'static' }}>{itemCount}</span>}
             </Link>
           </div>
+
+          {/* Designer Credit in Mobile Menu */}
+          <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-light)', textAlign: 'center' }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+              🎨 App Designed by <a href="https://wa.me/917981502973?text=Hi%20Sameer%2C%20I%20saw%20your%20design%20on%20SLNS%20Fresh!" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 700 }}>Sameer Khan</a>
+            </p>
+            <p style={{ fontSize: '0.75rem', margin: '4px 0 0' }}>
+              📞 <a href="tel:+917981502973" style={{ color: 'var(--accent-green)', fontWeight: 600 }}>+91 79815 02973</a>
+            </p>
+          </div>
         </div>
       )}
     </>

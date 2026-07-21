@@ -207,8 +207,38 @@ export default function AccountPage() {
                 )}
               </div>
             ))}
+        {/* Designer Promotion Badge */}
+        <div style={{
+          marginTop: '2.5rem',
+          padding: '1.25rem',
+          background: 'linear-gradient(135deg, rgba(15,76,117,0.06), rgba(16,185,129,0.08))',
+          border: '1px solid rgba(15,76,117,0.15)',
+          borderRadius: 'var(--radius-lg)',
+          textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent)', fontWeight: 700, margin: '0 0 4px' }}>
+            🚀 Web & App Designer
+          </p>
+          <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+            Application Designed & Developed by Sameer Khan
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a
+              href="https://wa.me/917981502973?text=Hi%20Sameer%2C%20I%20saw%20your%20design%20on%20SLNS%20Fresh!"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: '0.85rem', color: 'var(--accent-green)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              💬 WhatsApp: +91 79815 02973
+            </a>
+            <a
+              href="tel:+917981502973"
+              style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              📞 Call: +91 79815 02973
+            </a>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
