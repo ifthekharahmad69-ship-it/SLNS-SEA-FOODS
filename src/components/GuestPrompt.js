@@ -11,23 +11,34 @@ export default function GuestPrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // If logged in, loading, or user dismissed the prompt, do nothing
-    if (loading || user || dismissed) {
+    if (typeof window === 'undefined') return;
+    if (localStorage.getItem('slns_guest_prompt_dismissed')) {
+      setDismissed(true);
+      return;
+    }
+
+    if (user) {
+      localStorage.setItem('slns_guest_prompt_dismissed', 'true');
+      setDismissed(true);
       setShowToast(false);
       return;
     }
 
-    // Every 20 seconds, show the toast for 6 seconds
-    const interval = setInterval(() => {
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 6000);
-    }, 20000);
+    if (loading || dismissed) {
+      setShowToast(false);
+      return;
+    }
 
-    // Initial show after 10s
+    // Show prompt after 12s, then once every 45s for 5s
     const initial = setTimeout(() => {
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 6000);
-    }, 10000);
+      setTimeout(() => setShowToast(false), 5000);
+    }, 12000);
+
+    const interval = setInterval(() => {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 5000);
+    }, 45000);
 
     return () => {
       clearInterval(interval);
@@ -35,7 +46,15 @@ export default function GuestPrompt() {
     };
   }, [user, loading, dismissed]);
 
-  if (loading || user) return null;
+  const handleDismiss = () => {
+    setShowToast(false);
+    setDismissed(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('slns_guest_prompt_dismissed', 'true');
+    }
+  };
+
+  if (loading || user || dismissed) return null;
 
   return (
     <>
@@ -73,7 +92,7 @@ export default function GuestPrompt() {
           Sign In
         </button>
         <button
-          onClick={() => { setShowToast(false); setDismissed(true); }}
+          onClick={handleDismiss}
           style={{
             background: 'none', border: 'none', color: 'var(--text-muted)',
             fontSize: '1rem', cursor: 'pointer', padding: '0 4px', flexShrink: 0

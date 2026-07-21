@@ -11,6 +11,8 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
+  setPersistence,
+  browserLocalPersistence,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -27,12 +29,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Enforce permanent login persistence across sessions
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+
     // Handle redirect result when user comes back from Google sign-in page
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) setUser(result.user);
       })
-      .catch(() => {}); // ignore redirect errors silently
+      .catch(() => {});
 
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
@@ -42,17 +47,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ── Google Sign-In ──────────────────────────────────────────────
-  // Uses redirect on mobile (no popup blocking), popup on desktop
+  // Seamless 1-tap Google login (no repeated account prompt)
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
 
     if (isMobile()) {
-      // On mobile: redirect to Google, then come back automatically signed in
       await signInWithRedirect(auth, provider);
-      return; // Page will redirect, no result here
+      return;
     } else {
-      // On desktop: open a popup
       const result = await signInWithPopup(auth, provider);
       return result.user;
     }
