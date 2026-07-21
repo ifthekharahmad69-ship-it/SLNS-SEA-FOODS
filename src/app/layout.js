@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import GuestPrompt from '@/components/GuestPrompt';
 
 export const viewport = {
   themeColor: '#0f4c75',
@@ -64,6 +65,7 @@ export default function RootLayout({ children }) {
               <Footer />
               <MobileBottomNav />
               <WhatsAppFloat />
+              <GuestPrompt />
               <PWAInstallPrompt />
             </CartProvider>
           </AuthProvider>

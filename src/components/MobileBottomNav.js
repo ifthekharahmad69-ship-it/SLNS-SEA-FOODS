@@ -28,12 +28,12 @@ export default function MobileBottomNav() {
       matchPrefix: '/shop',
     },
     {
-      href: '/search',
-      label: 'Search',
+      href: '/account',
+      label: t('nav.account'),
       icon: (
         <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
       ),
     },
