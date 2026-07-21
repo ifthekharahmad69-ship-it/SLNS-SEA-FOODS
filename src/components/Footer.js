@@ -80,7 +80,25 @@ export default function Footer() {
         {/* Bottom */}
         <div className="footer-bottom">
           <span>© 2026 SLNS Fresh Sea Foods. All rights reserved.</span>
-          <span>Made with ❤️ for seafood lovers</span>
+          <span style={{ textAlign: 'center' }}>Made with ❤️ for seafood lovers</span>
+          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>
+            🎨 Designed by{' '}
+            <a
+              href="https://wa.me/917981502973"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Sameer Khan
+            </a>
+            {' '}· 📞{' '}
+            <a
+              href="tel:+917981502973"
+              style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none' }}
+            >
+              +91 79815 02973
+            </a>
+          </span>
         </div>
       </div>
     </footer>
