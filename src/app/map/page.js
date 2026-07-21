@@ -60,7 +60,7 @@ export default function MapPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <span>📍</span>
-                  <span>Hyderabad, Telangana, India</span>
+                  <span>Red Bridge, Amalapuram - 533201, AP, India</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <span>🕐</span>
@@ -75,39 +75,43 @@ export default function MapPage() {
                   <span>Free delivery above ₹500</span>
                 </div>
               </div>
+              <a
+                href="https://maps.app.goo.gl/jAZHit8dtPyE7f8f7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                style={{ width: '100%', marginTop: '1rem', textAlign: 'center', display: 'block' }}
+                id="open-google-maps-btn"
+              >
+                🗺️ Open in Google Maps
+              </a>
             </div>
 
             {/* How to use map */}
             <div style={{ background: 'linear-gradient(135deg, rgba(15,76,117,0.06), rgba(50,130,184,0.06))', borderRadius: 'var(--radius-lg)', padding: '1.25rem', border: '1px solid rgba(15,76,117,0.12)' }}>
-              <h4 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.75rem' }}>How to use the map</h4>
+              <h4 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.75rem' }}>How to use live distance</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                   <span style={{ flexShrink: 0 }}>1️⃣</span>
-                  <span>Click <strong>&quot;📍 Track My Location&quot;</strong> to share your GPS</span>
+                  <span>Click <strong>&quot;📍 Share Location&quot;</strong> to enable GPS</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                   <span style={{ flexShrink: 0 }}>2️⃣</span>
-                  <span>Your live location (orange dot) will appear on the map</span>
+                  <span>See exact distance in km from your location to store</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                   <span style={{ flexShrink: 0 }}>3️⃣</span>
-                  <span>See the dashed line showing distance to our store</span>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <span style={{ flexShrink: 0 }}>4️⃣</span>
-                  <span>Click <strong>&quot;Get Directions →&quot;</strong> to navigate</span>
+                  <span>Click <strong>&quot;Navigate on Google Maps&quot;</strong> for direct turn-by-turn directions</span>
                 </div>
               </div>
             </div>
 
             {/* Quick links */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <Link href="/track" className="btn btn-primary" style={{ textAlign: 'center' }} id="map-track-order-btn">
+              <Link href="/track" className="btn btn-ghost" style={{ textAlign: 'center' }} id="map-track-order-btn">
                 📦 Track My Order
               </Link>
-              <Link href="/shop/fish" className="btn btn-ghost" style={{ textAlign: 'center' }}>
-                🛒 Shop Now
-              </Link>
+            </div>
             </div>
           </div>
         </div>

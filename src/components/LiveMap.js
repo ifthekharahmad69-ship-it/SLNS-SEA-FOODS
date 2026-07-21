@@ -5,9 +5,10 @@ import { db } from '@/lib/firebase';
 import { getAuth } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-const STORE_LAT = 17.385044;
-const STORE_LNG = 78.486671;
+const STORE_LAT = 16.582194;
+const STORE_LNG = 82.024556;
 const STORE_NAME = 'SLNS Fresh Sea Foods';
+const GOOGLE_MAPS_LINK = 'https://maps.app.goo.gl/jAZHit8dtPyE7f8f7';
 
 function calcDistance(lat1, lng1, lat2, lng2) {
   const R = 6371;
@@ -21,7 +22,7 @@ function calcDistance(lat1, lng1, lat2, lng2) {
   return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
 }
 
-// Reverse geocode using Nominatim (OpenStreetMap) — free, no API key
+// Reverse geocode using Nominatim — free, no API key
 async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(
@@ -81,9 +82,8 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
   /* ── Auto-start location on mount ── */
   useEffect(() => {
     if (!showUserLocation) return;
-    // Small delay so map is ready first
     const t = setTimeout(() => {
-      startTracking(true); // true = auto (silent, no confirm)
+      startTracking(true);
     }, 800);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,13 +112,12 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
 
       const map = L.map(mapRef.current, {
         center: [STORE_LAT, STORE_LNG],
-        zoom: 14,
+        zoom: 15,
         zoomControl: true,
-        attributionControl: true,
+        attributionControl: false, // 🚫 Hidden branding/attribution
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
 
@@ -142,15 +141,21 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
       const storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon })
         .addTo(map)
         .bindPopup(
-          `<div style="font-family:sans-serif;min-width:160px;">
-            <strong style="font-size:14px;">🦐 ${STORE_NAME}</strong><br/>
-            <span style="color:#6B7280;font-size:12px;">Fresh seafood daily · 7AM–9PM</span><br/>
-            <a href="https://wa.me/917995177216" target="_blank"
-               style="color:#25D366;font-size:12px;font-weight:600;text-decoration:none;">
-              📱 Order on WhatsApp
-            </a>
+          `<div style="font-family:sans-serif;min-width:170px;">
+            <strong style="font-size:14px;color:#0F4C75;">🦐 ${STORE_NAME}</strong><br/>
+            <span style="color:#4B5563;font-size:12px;">Red Bridge, Amalapuram</span><br/>
+            <div style="margin-top:6px;display:flex;gap:8px;flex-direction:column;">
+              <a href="${GOOGLE_MAPS_LINK}" target="_blank" rel="noopener noreferrer"
+                 style="color:#2563EB;font-size:12px;font-weight:600;text-decoration:none;">
+                🗺️ Open in Google Maps
+              </a>
+              <a href="https://wa.me/917995177216" target="_blank"
+                 style="color:#16A34A;font-size:12px;font-weight:600;text-decoration:none;">
+                📱 Order on WhatsApp
+              </a>
+            </div>
           </div>`,
-          { maxWidth: 220 }
+          { maxWidth: 240 }
         )
         .openPopup();
 
@@ -188,7 +193,6 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
         setDistance(calcDistance(STORE_LAT, STORE_LNG, lat, lng));
         setStatus('found');
 
-        // Reverse geocode once (first fix)
         if (!savedRef.current) {
           const addr = await reverseGeocode(lat, lng);
           setAddress(addr);
@@ -272,7 +276,7 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
       const { map } = mapInstanceRef.current;
       if (userMarkerRef.current) { map.removeLayer(userMarkerRef.current); userMarkerRef.current = null; }
       if (lineRef.current)       { map.removeLayer(lineRef.current);       lineRef.current = null; }
-      map.setView([STORE_LAT, STORE_LNG], 14, { animate: true });
+      map.setView([STORE_LAT, STORE_LNG], 15, { animate: true });
     }
     setStatus('idle');
     setDistance(null);
@@ -284,7 +288,7 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
 
   const centerOnStore = () => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.map.setView([STORE_LAT, STORE_LNG], 15, { animate: true });
+      mapInstanceRef.current.map.setView([STORE_LAT, STORE_LNG], 16, { animate: true });
       mapInstanceRef.current.storeMarker.openPopup();
     }
   };
@@ -295,11 +299,15 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
     status === 'denied' || status === 'error' ? '#EF4444' : '#6B7280';
 
   const statusText =
-    status === 'idle'    ? '🗺️ Tap to share your location' :
-    status === 'locating'? '⏳ Getting your location...' :
-    status === 'found'   ? `📍 ${distance} km from store · ±${accuracy}m` :
+    status === 'idle'    ? '🗺️ Tap "Share Location" to see your distance from store' :
+    status === 'locating'? '⏳ Calculating your distance...' :
+    status === 'found'   ? `📍 You are ${distance} km from SLNS Fresh Sea Foods` :
     status === 'denied'  ? '⚠️ Location permission denied — please allow in browser' :
                            '⚠️ Location unavailable';
+
+  const googleDirUrl = userCoords
+    ? `https://www.google.com/maps/dir/?api=1&origin=${userCoords.lat},${userCoords.lng}&destination=${STORE_LAT},${STORE_LNG}`
+    : GOOGLE_MAPS_LINK;
 
   return (
     <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', background: 'var(--bg-card)' }}>
@@ -315,15 +323,20 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
             display: 'inline-block',
             animation: status === 'locating' || status === 'found' ? 'pulse 1.5s infinite' : 'none',
           }} />
-          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {statusText}
           </span>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-          <button onClick={centerOnStore} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', borderRadius: 'var(--radius-sm)', padding: '6px 12px', fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer' }}>
-            🦐 Store
-          </button>
+          <a
+            href={GOOGLE_MAPS_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: 'rgba(66,133,244,0.2)', border: '1px solid rgba(66,133,244,0.4)', color: '#93C5FD', borderRadius: 'var(--radius-sm)', padding: '6px 12px', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            🗺️ Google Maps
+          </a>
 
           {showUserLocation && (
             status === 'idle' || status === 'denied' || status === 'error' ? (
@@ -362,25 +375,21 @@ export default function LiveMap({ height = '420px', showUserLocation = true }) {
       {/* ── Map ── */}
       <div ref={mapRef} style={{ height, width: '100%', zIndex: 0 }} id="leaflet-map" />
 
-      {/* ── Footer ── */}
+      {/* ── Footer / Distance info bar ── */}
       {status === 'found' && distance && (
         <div style={{ display: 'flex', gap: '1.5rem', padding: '0.75rem 1.25rem', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)', fontSize: '0.82rem', color: 'var(--text-muted)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span>📏 <strong style={{ color: 'var(--text-primary)' }}>{distance} km</strong> from store</span>
-          <span>🎯 Accuracy <strong style={{ color: 'var(--text-primary)' }}>±{accuracy}m</strong></span>
-          {address && (
-            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              📍 {address.split(',').slice(0, 3).join(',')}
-            </span>
-          )}
+          <span>📏 Distance: <strong style={{ color: 'var(--accent)', fontSize: '0.95rem' }}>{distance} km</strong></span>
+          <span>🎯 Accuracy: <strong style={{ color: 'var(--text-primary)' }}>±{accuracy}m</strong></span>
           <a
-            href={`https://www.openstreetmap.org/directions?from=${userCoords?.lat},${userCoords?.lng}&to=${STORE_LAT},${STORE_LNG}`}
+            href={googleDirUrl}
             target="_blank" rel="noopener noreferrer"
-            style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}
+            style={{ marginLeft: 'auto', background: 'var(--accent)', color: 'white', padding: '5px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: 600, flexShrink: 0 }}
           >
-            Get Directions →
+            🗺️ Navigate on Google Maps →
           </a>
         </div>
       )}
     </div>
   );
 }
+
