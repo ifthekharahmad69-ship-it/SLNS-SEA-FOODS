@@ -35,6 +35,31 @@ export default function Footer() {
                 </svg>
               </a>
             </div>
+
+            {/* Designer Promotion Showcase Card */}
+            <div style={{
+              marginTop: '1.25rem',
+              padding: '0.85rem 1rem',
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(16, 185, 129, 0.15))',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              borderRadius: '12px',
+              maxWidth: 280,
+            }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: 700 }}>
+                💻 Application Designer
+              </div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, margin: '2px 0 4px', color: '#ffffff' }}>
+                Sameer Khan
+              </div>
+              <a
+                href="https://wa.me/917981502973?text=Hi%20Sameer%2C%20I%20want%20to%20build%20a%20website%2Fapp!"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '0.82rem', color: '#4ade80', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                📞 Contact: +91 79815 02973
+              </a>
+            </div>
           </div>
 
           {/* Shop */}
@@ -78,23 +103,23 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="footer-bottom">
+        <div className="footer-bottom" style={{ paddingBottom: 'calc(var(--mobile-nav-height, 64px) + 20px)' }}>
           <span>© 2026 SLNS Fresh Sea Foods. All rights reserved.</span>
           <span style={{ textAlign: 'center' }}>Made with ❤️ for seafood lovers</span>
-          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)' }}>
+          <span style={{ fontSize: '0.85rem', color: '#ffffff', background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.15)' }}>
             🎨 Designed by{' '}
             <a
               href="https://wa.me/917981502973"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600, textDecoration: 'none' }}
+              style={{ color: '#38bdf8', fontWeight: 700, textDecoration: 'none' }}
             >
               Sameer Khan
             </a>
             {' '}· 📞{' '}
             <a
               href="tel:+917981502973"
-              style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none' }}
+              style={{ color: '#4ade80', fontWeight: 700, textDecoration: 'none' }}
             >
               +91 79815 02973
             </a>
