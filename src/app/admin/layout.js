@@ -2,6 +2,8 @@
 // Nested layout for /admin — overrides manifest to use the admin PWA manifest
 // This lets the admin panel be installed as a SEPARATE app from the customer store
 
+import AdminInstallPrompt from '@/components/AdminInstallPrompt';
+
 export const metadata = {
   title: 'Amma Admin Panel — SLNS Fresh Sea Foods',
   description: 'Manage orders, products, and customers for SLNS Fresh Sea Foods.',
@@ -16,7 +18,10 @@ export const metadata = {
 };
 
 export default function AdminLayout({ children }) {
-  // Just pass children through — the root layout provides <html>, <body>, providers
-  // This layout only overrides the metadata (manifest)
-  return children;
+  return (
+    <>
+      {children}
+      <AdminInstallPrompt />
+    </>
+  );
 }
