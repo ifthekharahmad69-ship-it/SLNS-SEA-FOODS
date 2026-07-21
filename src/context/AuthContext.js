@@ -25,8 +25,21 @@ function isMobile() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('slns_user_cached');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('slns_user_cached')) {
+      return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     // Enforce permanent login persistence across sessions
@@ -35,19 +48,41 @@ export function AuthProvider({ children }) {
     // Handle redirect result when user comes back from Google sign-in page
     getRedirectResult(auth)
       .then((result) => {
-        if (result?.user) setUser(result.user);
+        if (result?.user) {
+          setUser(result.user);
+          try {
+            localStorage.setItem('slns_user_cached', JSON.stringify({
+              uid: result.user.uid,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL,
+            }));
+          } catch {}
+        }
       })
       .catch(() => {});
 
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
+      if (firebaseUser) {
+        try {
+          localStorage.setItem('slns_user_cached', JSON.stringify({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+          }));
+        } catch {}
+      } else {
+        try { localStorage.removeItem('slns_user_cached'); } catch {}
+      }
     });
     return () => unsub();
   }, []);
 
   // ── Google Sign-In ──────────────────────────────────────────────
-  // Seamless 1-tap Google login (no repeated account prompt)
+  // Seamless 1-tap Google login
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
 
@@ -56,6 +91,16 @@ export function AuthProvider({ children }) {
       return;
     } else {
       const result = await signInWithPopup(auth, provider);
+      if (result?.user) {
+        try {
+          localStorage.setItem('slns_user_cached', JSON.stringify({
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+          }));
+        } catch {}
+      }
       return result.user;
     }
   };
@@ -66,16 +111,40 @@ export function AuthProvider({ children }) {
     if (displayName) {
       await updateProfile(result.user, { displayName });
     }
+    if (result?.user) {
+      try {
+        localStorage.setItem('slns_user_cached', JSON.stringify({
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: displayName || result.user.displayName,
+          photoURL: result.user.photoURL,
+        }));
+      } catch {}
+    }
     return result.user;
   };
 
   const loginWithEmail = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
+    if (result?.user) {
+      try {
+        localStorage.setItem('slns_user_cached', JSON.stringify({
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+        }));
+      } catch {}
+    }
     return result.user;
   };
 
   // ── Sign Out ────────────────────────────────────────────────────
   const signOut = async () => {
+    try {
+      localStorage.removeItem('slns_user_cached');
+      localStorage.removeItem('slns_guest_prompt_dismissed');
+    } catch {}
     await firebaseSignOut(auth);
   };
 
