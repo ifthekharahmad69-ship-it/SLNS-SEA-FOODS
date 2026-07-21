@@ -104,14 +104,17 @@ export default function Header() {
 
           {/* Actions */}
           <div className="header-actions">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* Language Switcher — hidden on mobile to save space */}
+            <span className="hide-mobile"><LanguageSwitcher /></span>
 
-            <Link href="/search" className="icon-btn" aria-label="Search" title="Search">
+            {/* Search — hidden on mobile (use hamburger menu) */}
+            <Link href="/search" className="icon-btn hide-mobile" aria-label="Search" title="Search">
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
             </Link>
+
+            {/* Cart */}
             <Link href="/cart" className="icon-btn" aria-label={t('nav.cart')} title={t('nav.cart')} style={{ position: 'relative' }}>
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -123,7 +126,7 @@ export default function Header() {
               )}
             </Link>
 
-            {/* User Icon / Avatar */}
+            {/* User Avatar / Sign In — clearly visible on ALL screen sizes */}
             {user ? (
               <div ref={dropRef} style={{ position: 'relative' }}>
                 <button
@@ -136,14 +139,16 @@ export default function Header() {
                 >
                   {user.photoURL ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.photoURL} alt="avatar" width={28} height={28}
-                      style={{ borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+                    <img src={user.photoURL} alt="avatar" width={32} height={32}
+                      style={{ borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--accent)' }} />
                   ) : (
                     <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: 'var(--accent)', color: 'white',
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, var(--accent), #1a6fa8)',
+                      color: 'white',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.85rem', fontWeight: 700,
+                      fontSize: '0.9rem', fontWeight: 700,
+                      border: '2px solid var(--accent)',
                     }}>
                       {(user.displayName || user.email || '?')[0].toUpperCase()}
                     </div>
@@ -154,7 +159,7 @@ export default function Header() {
                     position: 'absolute', top: 'calc(100% + 8px)', right: 0,
                     background: 'var(--bg-card)', border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-                    minWidth: 180, zIndex: 1000, overflow: 'hidden',
+                    minWidth: 200, zIndex: 1000, overflow: 'hidden',
                   }}>
                     <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-light)' }}>
                       <p style={{ fontWeight: 600, fontSize: '0.88rem', margin: 0, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -183,17 +188,27 @@ export default function Header() {
                 )}
               </div>
             ) : (
+              /* Sign In button — text on desktop, icon+text on mobile */
               <button
-                className="icon-btn"
                 onClick={() => setAuthOpen(true)}
                 aria-label={t('nav.login')}
-                title={t('nav.login')}
                 id="signin-header-btn"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'linear-gradient(135deg, var(--accent), #1a6fa8)',
+                  color: 'white', border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '7px 14px',
+                  fontWeight: 700, fontSize: '0.82rem',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(0,100,200,0.3)',
+                }}
               >
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
                 </svg>
+                Sign In
               </button>
             )}
 
@@ -212,6 +227,7 @@ export default function Header() {
 
       {/* Auth Modal */}
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+
 
       {/* Mobile Menu */}
       {menuOpen && (

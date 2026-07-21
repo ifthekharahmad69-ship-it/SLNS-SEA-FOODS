@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 /* ======================== DESIGN TOKENS ======================== */
 :root {
@@ -444,7 +444,9 @@ ul, ol {
   .nav-desktop { display: none; }
   .search-bar { display: none; }
   .hamburger { display: flex; }
+  .hide-mobile { display: none !important; }
 }
+
 
 @media (min-width: 769px) {
   .mobile-menu { display: none !important; }
