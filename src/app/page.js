@@ -4,6 +4,7 @@ import { getFeaturedProducts, categories, products } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
 import HeroSection from '@/components/HeroSection';
 import MapWrapper from '@/components/MapWrapper';
+import CustomerReviewsShowcase from '@/components/CustomerReviewsShowcase';
 
 export const metadata = {
   title: 'SLNS Fresh Sea Foods — Fresh Fish, Prawns & Crabs Delivery Amalapuram',
@@ -201,6 +202,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Customer Reviews Showcase — displays all approved reviews for user attraction */}
+      <CustomerReviewsShowcase />
 
       {/* Find Us — Live Map */}
       <section className="section" id="find-us">

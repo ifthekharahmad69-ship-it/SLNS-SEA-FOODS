@@ -104,6 +104,12 @@ export default function ProductCard({ product }) {
           </div>
         )}
 
+        {/* Star Rating Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '4px 0 8px', fontSize: '0.78rem', color: '#d97706', fontWeight: 700 }}>
+          <span>★ 5.0</span>
+          <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Verified)</span>
+        </div>
+
         {/* Price */}
         <div className="product-card-price">
           <span className="price-current">₹{product.price}</span>
