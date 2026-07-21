@@ -57,12 +57,20 @@ export function AuthProvider({ children }) {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
-    if (isMobile()) {
-      await signInWithRedirect(auth, provider);
-      return;
-    } else {
+    try {
+      // Try in-page popup first (works on desktop & modern mobile browsers)
       const result = await signInWithPopup(auth, provider);
-      return result?.user;
+      if (result?.user) {
+        setUser(result.user);
+        return result.user;
+      }
+    } catch (popupError) {
+      // Fallback to redirect if popup is blocked on mobile
+      if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || isMobile()) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        throw popupError;
+      }
     }
   };
 
