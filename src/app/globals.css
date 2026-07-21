@@ -2273,16 +2273,38 @@ ul, ol {
 
 /* ========================================================================
    RESPONSIVE DESIGN SYSTEM — Comprehensive improvements for all breakpoints
-   Mobile (< 480px) | Tablet (480-1024px) | Desktop (>= 1024px)
+   Ultra-small (< 360px) | Mobile (< 480px) | Tablet (480-1024px) | Desktop (>= 1024px)
    ======================================================================== */
 
+/* Global Anti-Overflow Rules */
+html, body, main, #__next {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+img, video, iframe, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, a, div {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 /* Fluid Typography */
-.hero h1 { font-size: clamp(1.8rem, 5vw, 3.5rem); }
-.hero-desc { font-size: clamp(0.95rem, 2.5vw, 1.15rem); }
-.section-title { font-size: clamp(1.4rem, 3.5vw, 2rem); }
-.page-title { font-size: clamp(1.3rem, 3vw, 2rem); }
-.admin-header h1 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
-.stat-card .stat-value { font-size: clamp(1.4rem, 3vw, 2rem); }
+.hero h1 { font-size: clamp(1.75rem, 5vw, 3.5rem); }
+.hero-desc { font-size: clamp(0.9rem, 2.5vw, 1.15rem); }
+.section-title { font-size: clamp(1.35rem, 3.5vw, 2rem); }
+.page-title { font-size: clamp(1.25rem, 3vw, 2rem); }
+.admin-header h1 { font-size: clamp(1.25rem, 3vw, 1.8rem); }
+.stat-card .stat-value { font-size: clamp(1.3rem, 3vw, 2rem); }
 
 /* Touch-friendly tap targets */
 @media (max-width: 768px) {
@@ -2295,18 +2317,18 @@ ul, ol {
 @media (max-width: 480px) {
   .container { padding: 0 1.25rem; width: 100%; box-sizing: border-box; }
 }
-@media (max-width: 400px) {
-  .container { padding: 0 0.875rem; }
+@media (max-width: 360px) {
+  .container { padding: 0 0.75rem; }
 }
 
 /* Hero xs */
 @media (max-width: 480px) {
-  .hero { min-height: 380px; width: 100%; max-width: 100vw; }
-  .hero-content { padding: 2rem 1.25rem; width: 100%; max-width: 100%; }
-  .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; }
-  .hero-stat .number { font-size: 1.25rem; }
+  .hero { min-height: 360px; width: 100%; max-width: 100vw; }
+  .hero-content { padding: 1.75rem 1rem; width: 100%; max-width: 100%; }
+  .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; }
+  .hero-stat .number { font-size: 1.15rem; }
   .hero-actions { flex-direction: column; gap: 0.75rem; }
-  .hero-actions .btn { width: 100%; padding: 13px 16px; font-size: 0.9rem; justify-content: center; }
+  .hero-actions .btn { width: 100%; padding: 12px 16px; font-size: 0.88rem; justify-content: center; }
 }
 
 /* Category grid: tablet 2 col, mobile 2 col, xs 1 col */
@@ -2316,9 +2338,9 @@ ul, ol {
 @media (max-width: 768px) {
   .categories-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
   .category-card { aspect-ratio: 4/3; }
-  .category-card h3 { font-size: 1.2rem; }
+  .category-card h3 { font-size: 1.1rem; }
 }
-@media (max-width: 400px) {
+@media (max-width: 360px) {
   .categories-grid { grid-template-columns: 1fr; }
   .category-card { aspect-ratio: 16/9; }
 }
@@ -2338,22 +2360,24 @@ ul, ol {
 }
 
 /* Footer xs */
-@media (max-width: 400px) {
+@media (max-width: 480px) {
   .footer-grid { grid-template-columns: 1fr; }
   .footer { padding: 2rem 0 1rem; }
+  .footer-bottom { flex-direction: column; gap: 0.75rem; text-align: center; }
 }
 
 /* Cart xs */
 @media (max-width: 480px) {
-  .cart-item-image { width: 72px; height: 72px; }
-  .cart-item-name { font-size: 0.88rem; }
-  .qty-btn { width: 30px; height: 30px; }
-  .qty-value { width: 30px; line-height: 30px; }
+  .cart-item-image { width: 64px; height: 64px; }
+  .cart-item-name { font-size: 0.85rem; }
+  .qty-btn { width: 28px; height: 28px; }
+  .qty-value { width: 28px; line-height: 28px; }
 }
 
-/* Checkout xs */
+/* Checkout & Forms xs */
 @media (max-width: 480px) {
-  .checkout-form { padding: 1rem; }
+  .checkout-form { padding: 0.875rem; }
+  input, select, textarea { font-size: 16px !important; } /* prevents iOS zoom on focus */
 }
 
 /* ADMIN — Mobile responsive overhaul */
@@ -2397,8 +2421,8 @@ ul, ol {
   .admin-content { padding: 1rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
   .stat-card { padding: 1rem; }
-  .admin-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .admin-table { min-width: 580px; }
+  .admin-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; }
+  .admin-table { min-width: 540px; }
   .admin-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-bottom: 1rem; }
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal { max-width: 100%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; max-height: 92vh; padding: 1.5rem 1rem; }
@@ -2422,3 +2446,4 @@ ul, ol {
 
 /* Table product images */
 .table-product img { width: 48px; height: 48px; object-fit: cover; border-radius: var(--radius-sm); flex-shrink: 0; }
+
