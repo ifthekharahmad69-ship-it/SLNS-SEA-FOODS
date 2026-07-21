@@ -47,23 +47,30 @@ export async function GET(request) {
     const productId = searchParams.get('productId');
     const adminMode = searchParams.get('admin') === '1';
 
-    let q = adminDb.collection('reviews').orderBy('createdAt', 'desc');
+    // Fetch all reviews without requiring a Firestore composite index
+    const snapshot = await adminDb.collection('reviews').get();
 
+    let reviews = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || (typeof data.createdAt === 'string' ? data.createdAt : null),
+      };
+    });
+
+    // Filter by productId if specified
     if (productId) {
-      q = q.where('productId', '==', productId);
+      reviews = reviews.filter((r) => String(r.productId).trim() === String(productId).trim());
     }
+
+    // Filter by status if public
     if (!adminMode) {
-      // Public: only show approved reviews
-      q = q.where('status', '==', 'approved');
+      reviews = reviews.filter((r) => r.status === 'approved');
     }
 
-    const snapshot = await q.limit(100).get();
-
-    const reviews = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-    }));
+    // Sort by createdAt descending (newest first)
+    reviews.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
     return NextResponse.json({ success: true, reviews });
   } catch (err) {
