@@ -414,16 +414,16 @@ export default function CheckoutPage() {
         <h1 className="page-title">{t('checkout.title')}</h1>
 
         {/* Progress steps */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', alignItems: 'center' }}>
+        <div className="checkout-progress-steps">
           {[t('checkout.step1'), t('checkout.step2')].map((s, i) => (
-            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
               <div style={{
-                width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: step > i + 1 ? 'var(--accent-green)' : step === i + 1 ? 'var(--accent)' : 'var(--border)',
-                color: step >= i + 1 ? 'white' : 'var(--text-muted)', fontSize: '0.82rem', fontWeight: 700, flexShrink: 0,
+                color: step >= i + 1 ? 'white' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
               }}>{i + 1}</div>
-              <span style={{ fontSize: '0.88rem', fontWeight: step === i + 1 ? 600 : 400, color: step === i + 1 ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s}</span>
-              {i < 1 && <span style={{ color: 'var(--border)', margin: '0 0.25rem' }}>›</span>}
+              <span style={{ fontSize: '0.82rem', fontWeight: step === i + 1 ? 600 : 400, color: step === i + 1 ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s}</span>
+              {i < 1 && <span style={{ color: 'var(--border)', margin: '0 0.15rem' }}>›</span>}
             </div>
           ))}
         </div>
@@ -431,7 +431,7 @@ export default function CheckoutPage() {
         <div className="checkout-layout">
 
           {/* ── Left: Form or Confirm ── */}
-          <div>
+          <div style={{ minWidth: 0 }}>
 
             {/* STEP 1 — Delivery form */}
             {step === 1 && (
@@ -478,22 +478,16 @@ export default function CheckoutPage() {
                 {/* Payment Method */}
                 <div className="form-group">
                   <label className="form-label">{t('checkout.payment')}</label>
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                  <div className="checkout-radio-grid">
                     {[
                       ['cod', '💵', t('checkout.cod'), t('checkout.codSub')],
                       ['upi', '📱', t('checkout.upi'), t('checkout.upiSub')],
                     ].map(([v, icon, label, sub]) => (
-                      <label key={v} style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
-                        padding: '12px 16px', border: `2px solid ${form.payment === v ? 'var(--accent)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-md)',
-                        background: form.payment === v ? 'rgba(15,76,117,0.06)' : 'transparent',
-                        transition: 'all 0.2s', flex: 1, minWidth: 160,
-                      }}>
+                      <label key={v} className={`checkout-option-card ${form.payment === v ? 'active' : ''}`}>
                         <input type="radio" name="payment" value={v} checked={form.payment === v} onChange={handleChange} style={{ accentColor: 'var(--accent)' }} />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{icon} {label}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{sub}</div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{icon} {label}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.3, marginTop: 2 }}>{sub}</div>
                         </div>
                       </label>
                     ))}
@@ -510,22 +504,16 @@ export default function CheckoutPage() {
                 {/* Delivery Slot */}
                 <div className="form-group">
                   <label className="form-label">{t('checkout.slot')}</label>
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                  <div className="checkout-radio-grid">
                     {[
                       ['morning', '🌅', t('checkout.morning'), t('checkout.morningSub')],
                       ['evening', '🌆', t('checkout.evening'), t('checkout.eveningSub')],
                     ].map(([v, icon, label, sub]) => (
-                      <label key={v} style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
-                        padding: '10px 16px', border: `2px solid ${slot === v ? 'var(--accent)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-md)',
-                        background: slot === v ? 'rgba(15,76,117,0.06)' : 'transparent',
-                        transition: 'all 0.2s', flex: 1, minWidth: 140,
-                      }}>
+                      <label key={v} className={`checkout-option-card ${slot === v ? 'active' : ''}`}>
                         <input type="radio" name="slot" value={v} checked={slot === v} onChange={() => setSlot(v)} style={{ accentColor: 'var(--accent)' }} />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{icon} {label}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{sub}</div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{icon} {label}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.3, marginTop: 2 }}>{sub}</div>
                         </div>
                       </label>
                     ))}
