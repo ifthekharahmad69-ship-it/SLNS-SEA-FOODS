@@ -142,7 +142,7 @@ export default function CheckoutPage() {
       const payLabel = form.payment === 'upi' ? '📱 UPI / QR Code (pending verification)' : '💵 Cash on Delivery';
       const slotLabel = slot === 'morning' ? '🌅 Morning (6am–12pm)' : slot === 'evening' ? '🌆 Evening (3pm–8pm)' : 'Anytime';
       const promoLine = promoApplied ? `*Promo:* ${promoApplied.code} (−₹${promoDiscount})\n` : '';
-      const msg = `🛒 *New Order — Amma Sea Foods*\n\n*Order ID:* ${data.orderId}\n*Customer:* ${form.name}\n*Phone:* ${form.phone}\n*Address:* ${form.address}, ${form.city} - ${form.pincode}\n*Slot:* ${slotLabel}\n*Payment:* ${payLabel}\n\n*Items:*\n${lines}\n\n${promoLine}*Total: ₹${finalTotal}*\n${form.notes ? `*Notes:* ${form.notes}` : ''}`;
+      const msg = `🛒 *New Order — SLNS Fresh Sea Foods*\n\n*Order ID:* ${data.orderId}\n*Customer:* ${form.name}\n*Phone:* ${form.phone}\n*Address:* ${form.address}, ${form.city} - ${form.pincode}\n*Slot:* ${slotLabel}\n*Payment:* ${payLabel}\n\n*Items:*\n${lines}\n\n${promoLine}*Total: ₹${finalTotal}*\n${form.notes ? `*Notes:* ${form.notes}` : ''}`;
       window.open(`https://wa.me/917995177216?text=${encodeURIComponent(msg)}`, '_blank');
 
       // Route next step
