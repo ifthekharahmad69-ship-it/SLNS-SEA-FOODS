@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 // Star component
 function Stars({ rating, interactive = false, onRate }) {
@@ -42,6 +43,7 @@ function timeAgo(iso) {
 }
 
 export default function ReviewSection({ productId, productName }) {
+  const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -52,13 +54,26 @@ export default function ReviewSection({ productId, productName }) {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch approved reviews for this product
+  // Auto-fill user name when logged in
   useEffect(() => {
-    fetch(`/api/reviews?productId=${productId}`)
-      .then((r) => r.json())
-      .then((d) => { if (d.success) setReviews(d.reviews); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    if (user && !form.name) {
+      setForm((f) => ({ ...f, name: user.displayName || user.email?.split('@')[0] || '' }));
+    }
+  }, [user]);
+
+  // Fetch approved reviews for this product with 15s live polling
+  useEffect(() => {
+    const fetchApprovedReviews = () => {
+      fetch(`/api/reviews?productId=${productId}`)
+        .then((r) => r.json())
+        .then((d) => { if (d.success) setReviews(d.reviews); })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    };
+
+    fetchApprovedReviews();
+    const interval = setInterval(fetchApprovedReviews, 15000); // 15s live refresh
+    return () => clearInterval(interval);
   }, [productId]);
 
   const avgRating = reviews.length > 0
