@@ -25,64 +25,34 @@ function isMobile() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('slns_user_cached');
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return null;
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('slns_user_cached')) {
-      return false;
-    }
-    return true;
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Enforce permanent login persistence across sessions
+    // Enable standard secure local persistence managed directly by Firebase SDK
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    // Handle redirect result when user comes back from Google sign-in page
+    // Handle redirect result when user returns from Google sign-in
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
           setUser(result.user);
-          try {
-            localStorage.setItem('slns_user_cached', JSON.stringify({
-              uid: result.user.uid,
-              email: result.user.email,
-              displayName: result.user.displayName,
-              photoURL: result.user.photoURL,
-            }));
-          } catch {}
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Google Redirect Sign-In error:', err);
+      });
 
+    // Firebase official secure auth state listener
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
-      if (firebaseUser) {
-        try {
-          localStorage.setItem('slns_user_cached', JSON.stringify({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-          }));
-        } catch {}
-      } else {
-        try { localStorage.removeItem('slns_user_cached'); } catch {}
-      }
     });
+
     return () => unsub();
   }, []);
 
-  // ── Google Sign-In ──────────────────────────────────────────────
-  // Shows all available Google emails on device, automatically signs in on tap
+  // ── Secure Google Sign-In ─────────────────────────────────────────
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -92,60 +62,32 @@ export function AuthProvider({ children }) {
       return;
     } else {
       const result = await signInWithPopup(auth, provider);
-      if (result?.user) {
-        try {
-          localStorage.setItem('slns_user_cached', JSON.stringify({
-            uid: result.user.uid,
-            email: result.user.email,
-            displayName: result.user.displayName,
-            photoURL: result.user.photoURL,
-          }));
-        } catch {}
-      }
-      return result.user;
+      return result?.user;
     }
   };
 
-  // ── Email / Password ────────────────────────────────────────────
+  // ── Secure Email / Password Registration ──────────────────────────
   const registerWithEmail = async (email, password, displayName) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     if (displayName) {
       await updateProfile(result.user, { displayName });
     }
-    if (result?.user) {
-      try {
-        localStorage.setItem('slns_user_cached', JSON.stringify({
-          uid: result.user.uid,
-          email: result.user.email,
-          displayName: displayName || result.user.displayName,
-          photoURL: result.user.photoURL,
-        }));
-      } catch {}
-    }
     return result.user;
   };
 
+  // ── Secure Email / Password Login ─────────────────────────────────
   const loginWithEmail = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    if (result?.user) {
-      try {
-        localStorage.setItem('slns_user_cached', JSON.stringify({
-          uid: result.user.uid,
-          email: result.user.email,
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-        }));
-      } catch {}
-    }
     return result.user;
   };
 
-  // ── Sign Out ────────────────────────────────────────────────────
+  // ── Secure Sign Out ───────────────────────────────────────────────
   const signOut = async () => {
-    try {
-      localStorage.removeItem('slns_user_cached');
-      localStorage.removeItem('slns_guest_prompt_dismissed');
-    } catch {}
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('slns_user_cached');
+      } catch {}
+    }
     await firebaseSignOut(auth);
   };
 
