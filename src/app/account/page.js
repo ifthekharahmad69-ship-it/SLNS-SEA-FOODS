@@ -207,6 +207,9 @@ export default function AccountPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
         {/* Designer Promotion Badge */}
         <div style={{
           marginTop: '2.5rem',

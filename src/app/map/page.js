@@ -112,7 +112,6 @@ export default function MapPage() {
                 📦 Track My Order
               </Link>
             </div>
-            </div>
           </div>
         </div>
 
