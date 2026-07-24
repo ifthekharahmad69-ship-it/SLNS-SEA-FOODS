@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { searchProducts, products } from '@/data/products';
+import { useProducts } from '@/lib/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 function SearchContent() {
@@ -14,112 +14,85 @@ function SearchContent() {
   const [results, setResults] = useState([]);
   const [searched, setSearched] = useState(false);
 
+  // Use live products (Firestore real-time) so search includes admin-added/edited products
+  const { products, loading } = useProducts();
+
   const doSearch = useCallback((q) => {
     if (!q.trim()) { setResults([]); setSearched(false); return; }
-    setResults(searchProducts(q));
+    const lower = q.toLowerCase();
+    const found = products.filter((p) =>
+      (p.name || '').toLowerCase().includes(lower) ||
+      (p.category || '').toLowerCase().includes(lower) ||
+      (p.description || '').toLowerCase().includes(lower) ||
+      (p.tags || []).some((t) => t.toLowerCase().includes(lower))
+    );
+    setResults(found);
     setSearched(true);
-  }, []);
+  }, [products]);
 
   useEffect(() => { doSearch(initialQ); }, [initialQ, doSearch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    router.push(`/search?q=${encodeURIComponent(query)}`);
     doSearch(query);
   };
 
-  const popularSearches = ['Rohu', 'Tiger Prawn', 'Crab Masala', 'Fish Fry', 'Biryani', 'Pomfret'];
-
   return (
-    <>
-      {/* Search Input */}
-      <form onSubmit={handleSubmit} style={{ position: 'relative', marginBottom: '1.5rem' }}>
-        <svg
-          style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', pointerEvents: 'none' }}
-          width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
-        >
-          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-        </svg>
-        <input
-          id="search-page-input"
-          type="search"
-          className="search-page-input"
-          placeholder="Search for fish, prawns, crabs, dishes..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
-      </form>
+    <div className="page-wrapper">
+      <div className="container">
+        <div style={{ paddingTop: '2rem', paddingBottom: '1rem' }}>
+          <h1 className="page-title">Search Products</h1>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.75rem', maxWidth: 480, marginTop: '1rem' }}>
+            <input
+              type="search"
+              className="form-input"
+              placeholder="Search fish, prawns, crabs..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              id="search-input"
+              autoFocus
+              style={{ flex: 1 }}
+            />
+            <button type="submit" className="btn btn-primary" id="search-submit-btn">
+              🔍 Search
+            </button>
+          </form>
+        </div>
 
-      {/* Popular searches */}
-      {!searched && (
-        <>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Popular searches:</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem' }}>
-            {popularSearches.map((s) => (
-              <button
-                key={s}
-                className="filter-tab"
-                onClick={() => {
-                  setQuery(s);
-                  router.push(`/search?q=${encodeURIComponent(s)}`);
-                  doSearch(s);
-                }}
-              >
-                {s}
-              </button>
+        {loading && (
+          <p style={{ color: 'var(--text-muted)', marginTop: '1rem' }}>⏳ Loading products...</p>
+        )}
+
+        {searched && !loading && (
+          <p className="search-results-count">
+            {results.length} result{results.length !== 1 ? 's' : ''} for &ldquo;{initialQ}&rdquo;
+          </p>
+        )}
+
+        {results.length > 0 ? (
+          <div className="products-grid" style={{ marginTop: '1.5rem' }}>
+            {results.map((p) => (
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>All products:</p>
-          <div className="products-grid">
-            {products.slice(0, 8).map((p) => <ProductCard key={p.id} product={p} />)}
+        ) : searched && !loading ? (
+          <div className="cart-empty" style={{ paddingTop: '3rem' }}>
+            <div className="cart-empty-icon">🔍</div>
+            <h2>No results found</h2>
+            <p>Try different keywords or browse our categories.</p>
+            <Link href="/shop/fish" className="btn btn-primary">Browse Shop</Link>
           </div>
-        </>
-      )}
-
-      {/* Results */}
-      {searched && (
-        <>
-          <p className="search-results-count">
-            {results.length > 0
-              ? `${results.length} result${results.length !== 1 ? 's' : ''} for "${initialQ || query}"`
-              : `No results for "${initialQ || query}"`}
-          </p>
-          {results.length > 0 ? (
-            <div className="products-grid">
-              {results.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
-          ) : (
-            <div className="cart-empty" style={{ padding: '3rem' }}>
-              <div className="cart-empty-icon">🔍</div>
-              <h2>No results found</h2>
-              <p>Try searching for &ldquo;fish&rdquo;, &ldquo;prawn&rdquo;, &ldquo;crab&rdquo;, or &ldquo;biryani&rdquo;</p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
-                <Link href="/shop/fish" className="btn btn-primary">Browse Fish</Link>
-                <Link href="/shop/prawns" className="btn btn-ghost" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>Browse Prawns</Link>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
 export default function SearchPage() {
   return (
-    <div className="page-wrapper">
-      <div className="container">
-        <h1 className="page-title" style={{ marginTop: '1rem' }}>Search Products</h1>
-        <Suspense fallback={
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div>
-            Loading search...
-          </div>
-        }>
-          <SearchContent />
-        </Suspense>
-      </div>
-    </div>
+    <Suspense fallback={<div className="page-wrapper"><div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>⏳ Loading...</div></div>}>
+      <SearchContent />
+    </Suspense>
   );
 }
