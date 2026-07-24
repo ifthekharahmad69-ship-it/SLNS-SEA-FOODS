@@ -67,13 +67,22 @@ export default function CartPage() {
                       <div className="qty-control">
                         <button
                           className="qty-btn"
-                          onClick={() => updateQty(item.id, item.qty - 1)}
+                          onClick={() => updateQty(item.id, +(item.qty - 0.5).toFixed(1))}
                           aria-label="Decrease quantity"
                         >−</button>
-                        <span className="qty-value">{item.qty}</span>
+                        <span className="qty-value">
+                          {(() => {
+                            const q = item.qty;
+                            const w = Math.floor(q);
+                            const h = (q % 1) >= 0.4;
+                            if (w === 0 && h) return '½ kg';
+                            if (w > 0 && h) return `${w}½ kg`;
+                            return `${w} kg`;
+                          })()}
+                        </span>
                         <button
                           className="qty-btn"
-                          onClick={() => updateQty(item.id, item.qty + 1)}
+                          onClick={() => updateQty(item.id, +(item.qty + 0.5).toFixed(1))}
                           aria-label="Increase quantity"
                         >+</button>
                       </div>

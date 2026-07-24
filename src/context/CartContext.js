@@ -14,22 +14,23 @@ function cartReducer(state, action) {
         return {
           ...state,
           items: state.items.map((i) =>
-            i.id === action.product.id ? { ...i, qty: i.qty + 1 } : i
+            i.id === action.product.id ? { ...i, qty: +(i.qty + 0.5).toFixed(1) } : i
           ),
         };
       }
-      return { ...state, items: [...state.items, { ...action.product, qty: 1 }] };
+      // Start every product at ½ kg
+      return { ...state, items: [...state.items, { ...action.product, qty: 0.5 }] };
     }
     case 'REMOVE_ITEM':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) };
     case 'UPDATE_QTY':
-      if (action.qty <= 0) {
+      if (action.qty < 0.5) {
         return { ...state, items: state.items.filter((i) => i.id !== action.id) };
       }
       return {
         ...state,
         items: state.items.map((i) =>
-          i.id === action.id ? { ...i, qty: action.qty } : i
+          i.id === action.id ? { ...i, qty: +action.qty.toFixed(1) } : i
         ),
       };
     case 'CLEAR_CART':
