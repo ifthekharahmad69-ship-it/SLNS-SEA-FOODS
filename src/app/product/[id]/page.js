@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getProductById, getRelatedProducts } from '@/data/products';
 import { useCart } from '@/context/CartContext';
+import { useProducts } from '@/lib/useProducts';
 import ProductCard from '@/components/ProductCard';
 import ReviewSection from '@/components/ReviewSection';
 
@@ -15,10 +16,17 @@ function getDiscount(price, original) {
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const product = getProductById(params?.id);
-  const { addItem, items, updateQty, removeItem } = useCart();
+  const { addItem, items, updateQty } = useCart();
   const [activeImg, setActiveImg] = useState(0);
   const [added, setAdded] = useState(false);
+
+  // Use live products from API (falls back to static instantly)
+  const { products: allProducts } = useProducts();
+
+  // Find product: first check live API products, then fall back to static
+  const liveProduct = allProducts.find((p) => p.id === params?.id);
+  const staticProduct = getProductById(params?.id);
+  const product = liveProduct || staticProduct;
 
   if (!product) return notFound();
 
@@ -34,9 +42,16 @@ export default function ProductDetailPage() {
   };
 
   const handleWhatsApp = () => {
-    const msg = `Hi! I'd like to order *${product.name}* (₹${product.price}/${product.unit.replace('per ', '')}). Please confirm availability.`;
+    const msg = `Hi! I'd like to order *${product.name}* (₹${product.price}/${(product.unit || 'per kg').replace('per ', '')}). Please confirm availability.`;
     window.open(`https://wa.me/917995177216?text=${encodeURIComponent(msg)}`, '_blank');
   };
+
+  // Build images array — support both single image and images array
+  const images = product.images && product.images.length > 0
+    ? product.images
+    : product.image
+      ? [product.image]
+      : ['/images/placeholder.jpg'];
 
   return (
     <div className="page-wrapper">
@@ -56,7 +71,7 @@ export default function ProductDetailPage() {
           <div className="product-gallery">
             <div className="product-main-image">
               <Image
-                src={product.images[activeImg] || product.image}
+                src={images[activeImg]}
                 alt={product.name}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -69,9 +84,9 @@ export default function ProductDetailPage() {
                 </span>
               )}
             </div>
-            {product.images.length > 1 && (
+            {images.length > 1 && (
               <div className="product-thumbnails">
-                {product.images.map((img, i) => (
+                {images.map((img, i) => (
                   <button
                     key={i}
                     className={`product-thumb${activeImg === i ? ' active' : ''}`}
@@ -89,7 +104,7 @@ export default function ProductDetailPage() {
           <div className="product-info">
             {/* Tags */}
             <div className="product-tags">
-              {product.tags.slice(0, 3).map((t) => (
+              {(product.tags || []).slice(0, 3).map((t) => (
                 <span key={t} className="tag">#{t}</span>
               ))}
               {!product.inStock && <span className="tag" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>Out of Stock</span>}
@@ -99,13 +114,15 @@ export default function ProductDetailPage() {
 
             {/* Freshness / meta */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: 'var(--accent-green)', fontWeight: 500 }}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                {product.freshness}
-              </span>
-              <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>📦 {product.weight}</span>
+              {product.freshness && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: 'var(--accent-green)', fontWeight: 500 }}>
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {product.freshness}
+                </span>
+              )}
+              {product.weight && <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>📦 {product.weight}</span>}
               {product.serves && <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>👥 {product.serves}</span>}
               {product.prepTime && <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>⏱️ {product.prepTime}</span>}
             </div>

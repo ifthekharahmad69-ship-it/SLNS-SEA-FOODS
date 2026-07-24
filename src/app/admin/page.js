@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { products as staticProducts } from '@/data/products';
+import { useProducts } from '@/lib/useProducts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
@@ -106,7 +107,8 @@ export default function AdminPage() {
   const [pwaPrompt, setPwaPrompt] = useState(null);   // admin PWA install prompt
   const [pwaInstalled, setPwaInstalled] = useState(false);
 
-  // ── Product Management State ───────────────────────────────────────────────
+  // ── Product Management State (Real-time Firestore listener) ──────────────────
+  const { products: liveProducts, loading: liveLoading } = useProducts();
   const [allProducts, setAllProducts] = useState(staticProducts);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [productSearch, setProductSearch] = useState('');
@@ -168,6 +170,15 @@ export default function AdminPage() {
     }
   };
 
+  // Sync real-time Firestore products → admin product list
+  // This ensures admin sees the same live view as customers instantly
+  useEffect(() => {
+    if (liveProducts && liveProducts.length > 0) {
+      setAllProducts(liveProducts);
+    }
+  }, [liveProducts]);
+
+  // Initial load fallback (in case Firestore listener hasn't fired yet)
   useEffect(() => { fetchProducts(); }, []);
 
   const toggleStock = async (product) => {

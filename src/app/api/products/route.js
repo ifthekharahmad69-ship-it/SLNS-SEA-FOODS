@@ -6,10 +6,10 @@ import { FieldValue } from 'firebase-admin/firestore';
 // GET /api/products — merged static products + Firestore overrides + new products
 export async function GET() {
   try {
-    // Fetch overrides (price/stock changes for static products)
+    // Fetch overrides (price/stock/image changes for static products) and new products
     const [overridesSnap, newProductsSnap] = await Promise.all([
       adminDb.collection('product_overrides').get(),
-      adminDb.collection('products_new').orderBy('createdAt', 'desc').get(),
+      adminDb.collection('products_new').get(),
     ]);
 
     const overrides = {};
@@ -19,14 +19,24 @@ export async function GET() {
 
     const newProducts = [];
     newProductsSnap.forEach((doc) => {
-      newProducts.push({ id: doc.id, isNew: true, ...doc.data() });
+      const data = doc.data();
+      // Exclude soft-deleted new products
+      if (!data._deleted) {
+        newProducts.push({ id: doc.id, isNew: true, ...data });
+      }
     });
 
-    // Merge static products with their overrides
-    const merged = staticProducts.map((p) => ({
-      ...p,
-      ...(overrides[p.id] || {}),
-    }));
+    // Sort new products newest first in memory (no index needed)
+    newProducts.sort((a, b) => {
+      const ta = a.createdAt?.toMillis?.() || a.createdAt?._seconds * 1000 || 0;
+      const tb = b.createdAt?.toMillis?.() || b.createdAt?._seconds * 1000 || 0;
+      return tb - ta;
+    });
+
+    // Merge static products with their overrides, filter out soft-deleted ones
+    const merged = staticProducts
+      .map((p) => ({ ...p, ...(overrides[p.id] || {}) }))
+      .filter((p) => !p._deleted);
 
     return NextResponse.json({ products: [...merged, ...newProducts] });
   } catch (err) {
@@ -38,15 +48,27 @@ export async function GET() {
 // POST /api/products — add a brand new product (admin only)
 export async function POST(request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+
     const { name, price, originalPrice, category, type, description, image, unit, weight } = body;
 
-    if (!name || !price || !category) {
-      return NextResponse.json({ error: 'Name, price and category are required' }, { status: 400 });
+    if (!name || !String(name).trim()) {
+      return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
+    }
+    if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+      return NextResponse.json({ error: 'A valid price is required' }, { status: 400 });
+    }
+    if (!category) {
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
     }
 
     const docRef = await adminDb.collection('products_new').add({
-      name: name.trim(),
+      name: String(name).trim(),
       price: Number(price),
       originalPrice: Number(originalPrice || price),
       category,

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useProducts } from '@/lib/useProducts';
+import { useProducts, useCategories } from '@/lib/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 const CATEGORY_META = {

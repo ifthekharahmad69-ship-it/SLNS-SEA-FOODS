@@ -1,22 +1,14 @@
+'use client';
+
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getFeaturedProducts, categories, products } from '@/data/products';
+import { useProducts, useCategories } from '@/lib/useProducts';
 import ProductCard from '@/components/ProductCard';
 import HeroSection from '@/components/HeroSection';
 import MapWrapper from '@/components/MapWrapper';
 import CustomerReviewsShowcase from '@/components/CustomerReviewsShowcase';
 
-export const metadata = {
-  title: 'SLNS Fresh Sea Foods — Fresh Fish, Prawns & Crabs Delivery Amalapuram',
-  description:
-    'Order fresh fish, prawns, crabs and authentic Andhra seafood dishes delivered to your door in Amalapuram. Farm-fresh, cleaned & ready to cook. Free delivery above ₹500.',
-  keywords: 'fresh seafood Amalapuram, fish delivery Amalapuram, prawns delivery, crabs delivery, seafood near me, SLNS Fresh, Amma Sea Foods',
-  openGraph: {
-    title: 'SLNS Fresh Sea Foods — Premium Seafood Delivery',
-    description: 'Fresh fish, prawns, crabs & Andhra dishes delivered to your door.',
-    type: 'website',
-  },
-};
 
 // LocalBusiness JSON-LD — Google shows this in search results
 const localBusinessSchema = {
@@ -65,9 +57,21 @@ const localBusinessSchema = {
 };
 
 export default function HomePage() {
-  const featured = getFeaturedProducts();
-  const rawFish = products.filter((p) => p.category === 'fish' && p.type === 'raw').slice(0, 4);
-  const dishes = products.filter((p) => p.type === 'dish').slice(0, 4);
+  const { products } = useProducts();
+  const { categories } = useCategories();
+
+  const featured = useMemo(
+    () => products.filter((p) => p.isFeatured).slice(0, 8),
+    [products]
+  );
+  const rawFish = useMemo(
+    () => products.filter((p) => p.category === 'fish' && p.type === 'raw').slice(0, 4),
+    [products]
+  );
+  const dishes = useMemo(
+    () => products.filter((p) => p.type === 'dish').slice(0, 4),
+    [products]
+  );
 
   return (
     <div className="page-wrapper">
