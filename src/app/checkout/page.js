@@ -18,9 +18,7 @@ export default function CheckoutPage() {
   const { t } = useLanguage();
   const [showAuth, setShowAuth] = useState(false);
 
-
   // ── State ──────────────────────────────────────────────────────────────────
-  // step: 1 = delivery form | 2 = confirm | 'upi' = QR pay | 3 = success
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: '', phone: '', email: '', address: '', city: '', pincode: '', notes: '',
@@ -30,11 +28,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  // After order is saved
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
   const [confirmedDocId, setConfirmedDocId] = useState('');
 
-  // UPI payment confirmation
   const [utrNumber, setUtrNumber] = useState('');
   const [utrError, setUtrError] = useState('');
   const [submittingUtr, setSubmittingUtr] = useState(false);
@@ -42,23 +38,20 @@ export default function CheckoutPage() {
 
   // ── Promo code ──────────────────────────────────────────────────────────────
   const [promoInput, setPromoInput] = useState('');
-  const [promoApplied, setPromoApplied] = useState(null); // { code, discount, description }
+  const [promoApplied, setPromoApplied] = useState(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
-  const [availablePromos, setAvailablePromos] = useState([]); // auto-fetched from admin
+  const [availablePromos, setAvailablePromos] = useState([]);
 
-  // Fetch active promo codes from admin panel on mount
   useEffect(() => {
     fetch('/api/promo/active')
       .then((r) => r.json())
       .then((d) => { if (d.success) setAvailablePromos(d.codes); })
-      .catch(() => {}); // silent fail — non-critical
+      .catch(() => {});
   }, []);
 
-  // ── Delivery slot ───────────────────────────────────────────────────────────
-  const [slot, setSlot] = useState(''); // '' | 'morning' | 'evening'
+  const [slot, setSlot] = useState('');
 
-  // ── Promo-adjusted total ────────────────────────────────────────────────────
   const promoDiscount = promoApplied?.discount || 0;
   const finalTotal = Math.max(0, total - promoDiscount);
 
@@ -86,7 +79,7 @@ export default function CheckoutPage() {
     if (validate()) setStep(2);
   };
 
-  // ── Apply promo code ────────────────────────────────────────────────────────
+  // ── Apply promo ──────────────────────────────────────────────────────────────
   const applyPromo = async () => {
     if (!promoInput.trim()) return;
     setPromoLoading(true);
@@ -99,11 +92,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({ code: promoInput.trim(), orderTotal: total }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setPromoError(data.error || 'Invalid promo code');
-      } else {
-        setPromoApplied({ code: data.code, discount: data.discount, description: data.description });
-      }
+      if (!res.ok) setPromoError(data.error || 'Invalid promo code');
+      else setPromoApplied({ code: data.code, discount: data.discount, description: data.description });
     } catch {
       setPromoError('Could not validate. Please try again.');
     } finally {
@@ -111,7 +101,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // ── Step 2 → Place order in Firestore, then route based on payment method ──
+  // ── Confirm order ────────────────────────────────────────────────────────────
   const handleConfirm = async () => {
     setIsSubmitting(true);
     setSubmitError('');
@@ -137,7 +127,6 @@ export default function CheckoutPage() {
       setConfirmedOrderId(data.orderId);
       setConfirmedDocId(data.docId);
 
-      // Send WhatsApp notification to shop
       const lines = items.map((i) => `• ${i.name} x${i.qty} — ₹${i.price * i.qty}`).join('\n');
       const payLabel = form.payment === 'upi' ? '📱 UPI / QR Code (pending verification)' : '💵 Cash on Delivery';
       const slotLabel = slot === 'morning' ? '🌅 Morning (6am–12pm)' : slot === 'evening' ? '🌆 Evening (3pm–8pm)' : 'Anytime';
@@ -145,12 +134,11 @@ export default function CheckoutPage() {
       const msg = `🛒 *New Order — SLNS Fresh Sea Foods*\n\n*Order ID:* ${data.orderId}\n*Customer:* ${form.name}\n*Phone:* ${form.phone}\n*Address:* ${form.address}, ${form.city} - ${form.pincode}\n*Slot:* ${slotLabel}\n*Payment:* ${payLabel}\n\n*Items:*\n${lines}\n\n${promoLine}*Total: ₹${finalTotal}*\n${form.notes ? `*Notes:* ${form.notes}` : ''}`;
       window.open(`https://wa.me/917995177216?text=${encodeURIComponent(msg)}`, '_blank');
 
-      // Route next step
       if (form.payment === 'upi') {
-        setStep('upi'); // → show QR code
+        setStep('upi');
       } else {
         clearCart();
-        setStep(3);     // → COD success
+        setStep(3);
       }
     } catch (err) {
       setSubmitError(err.message || 'Something went wrong. Please try again.');
@@ -159,7 +147,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // ── UPI: customer submits UTR after paying ───────────────────────────────────
+  // ── UPI UTR submit ───────────────────────────────────────────────────────────
   const handleUtrSubmit = async () => {
     if (!utrNumber.trim()) {
       setUtrError('Please enter the UTR / Transaction ID from your payment app.');
@@ -188,20 +176,19 @@ export default function CheckoutPage() {
     setTimeout(() => setUtrCopied(false), 2000);
   };
 
-  // ── UPI deep-link for QR ─────────────────────────────────────────────────────
   const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${finalTotal}&cu=INR&tn=${encodeURIComponent('Order ' + confirmedOrderId)}`;
 
-  // ── Auth guard ─────────────────────────────────────────────────────────────
+  // ── Auth guard ───────────────────────────────────────────────────────────────
   if (!loading && !user) {
     return (
       <div className="page-wrapper">
-        <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '1rem' }}>
+        <div className="container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '1rem', padding: '2rem 1rem' }}>
           <div style={{ fontSize: '3rem' }}>🔒</div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: 'var(--text-primary)' }}>Sign in to Checkout</h2>
-          <p style={{ color: 'var(--text-muted)', maxWidth: 320 }}>Create a free account or sign in to place your order and track it.</p>
+          <p style={{ color: 'var(--text-muted)', maxWidth: 300 }}>Create a free account or sign in to place your order and track it.</p>
           <button
             onClick={() => setShowAuth(true)}
-            style={{ background: 'linear-gradient(135deg,var(--accent),#1a6fa8)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', padding: '12px 28px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
+            style={{ background: 'linear-gradient(135deg,var(--accent),#1a6fa8)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', padding: '14px 28px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', width: '100%', maxWidth: 320 }}
           >
             🦐 Sign In / Create Account
           </button>
@@ -211,7 +198,7 @@ export default function CheckoutPage() {
     );
   }
 
-  // ── Empty cart guard ─────────────────────────────────────────────────────────
+  // ── Empty cart ────────────────────────────────────────────────────────────────
   if (items.length === 0 && step !== 3) {
     return (
       <div className="page-wrapper">
@@ -238,27 +225,21 @@ export default function CheckoutPage() {
           <div className="cart-empty">
             <div className="cart-empty-icon">{isUpi ? '🎉' : '✅'}</div>
             <h2>{isUpi ? 'Payment Received!' : 'Order Placed!'}</h2>
-
             {confirmedOrderId && (
-              <div style={{
-                background: 'var(--bg-card)', border: '2px solid var(--accent)',
-                borderRadius: 'var(--radius-lg)', padding: '1.25rem 2rem',
-                margin: '1rem auto', maxWidth: 320, textAlign: 'center',
-              }}>
+              <div style={{ background: 'var(--bg-card)', border: '2px solid var(--accent)', borderRadius: 'var(--radius-lg)', padding: '1.25rem 2rem', margin: '1rem auto', maxWidth: 320, textAlign: 'center' }}>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4, fontWeight: 600 }}>Your Order ID</p>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)', margin: 0 }}>{confirmedOrderId}</p>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>Save this to track your order</p>
               </div>
             )}
-
-            <p style={{ maxWidth: 420, margin: '0.75rem auto 1.5rem', textAlign: 'center' }}>
+            <p style={{ maxWidth: 320, margin: '0.75rem auto 1.5rem', textAlign: 'center' }}>
               {isUpi
                 ? `Your UPI payment has been noted, ${form.name}! We'll verify and confirm your order within a few minutes.`
                 : `Your order has been saved. Our team will confirm within a few minutes. Thank you, ${form.name}!`}
             </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/" className="btn btn-primary btn-lg" id="order-success-home-btn">Back to Home</Link>
-              <Link href={`/track?id=${confirmedOrderId}`} className="btn btn-ghost btn-lg" id="order-track-btn">Track My Order →</Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', maxWidth: 320, margin: '0 auto' }}>
+              <Link href={`/track?id=${confirmedOrderId}`} className="btn btn-primary btn-lg" id="order-track-btn" style={{ width: '100%' }}>Track My Order →</Link>
+              <Link href="/" className="btn btn-ghost btn-lg" id="order-success-home-btn" style={{ width: '100%' }}>Back to Home</Link>
             </div>
           </div>
         </div>
@@ -267,129 +248,62 @@ export default function CheckoutPage() {
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  //  STEP 'upi' — QR CODE PAYMENT SCREEN
+  //  STEP 'upi' — QR CODE PAYMENT
   // ══════════════════════════════════════════════════════════════════════
   if (step === 'upi') {
     return (
       <div className="page-wrapper">
         <div className="container">
-          <div style={{ maxWidth: 480, margin: '2rem auto' }}>
-
-            {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📱</div>
-              <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '0.25rem' }}>
-                Pay via UPI / QR Code
-              </h1>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                Scan with PhonePe, GPay, Paytm or any UPI app
-              </p>
+          <div style={{ maxWidth: 480, margin: '1.5rem auto', padding: '0 0 6rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.4rem' }}>📱</div>
+              <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '0.25rem', fontSize: '1.4rem' }}>Pay via UPI / QR Code</h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Scan with PhonePe, GPay, Paytm or any UPI app</p>
             </div>
 
-            {/* Amount box */}
-            <div style={{
-              background: 'linear-gradient(135deg, var(--accent), #1a7abf)',
-              borderRadius: 'var(--radius-lg)', padding: '1rem',
-              textAlign: 'center', color: 'white', marginBottom: '1.5rem',
-            }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--accent), #1a7abf)', borderRadius: 'var(--radius-lg)', padding: '1rem', textAlign: 'center', color: 'white', marginBottom: '1.25rem' }}>
               <p style={{ fontSize: '0.82rem', opacity: 0.85, marginBottom: 4 }}>Amount to Pay</p>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '2.2rem', fontWeight: 700, margin: 0 }}>₹{total}</p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '2rem', fontWeight: 700, margin: 0 }}>₹{finalTotal}</p>
               <p style={{ fontSize: '0.78rem', opacity: 0.75, marginTop: 4 }}>Order: {confirmedOrderId}</p>
             </div>
 
-            {/* QR Code */}
-            <div style={{
-              background: 'white', borderRadius: 'var(--radius-lg)',
-              padding: '1.5rem', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: '1rem', marginBottom: '1.5rem',
-              border: '1px solid var(--border)',
-            }}>
-              <QRCode
-                value={upiUrl}
-                size={220}
-                bgColor="#ffffff"
-                fgColor="#0f4c75"
-                level="M"
-              />
-              <p style={{ fontSize: '0.78rem', color: '#555', textAlign: 'center', margin: 0 }}>
-                Scan this QR · Amount is pre-filled ₹{total}
-              </p>
+            <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', border: '1px solid var(--border)' }}>
+              <QRCode value={upiUrl} size={200} bgColor="#ffffff" fgColor="#0f4c75" level="M" />
+              <p style={{ fontSize: '0.78rem', color: '#555', textAlign: 'center', margin: 0 }}>Scan · Amount pre-filled ₹{finalTotal}</p>
             </div>
 
-            {/* Manual UPI ID */}
-            <div style={{
-              background: 'var(--bg-card)', borderRadius: 'var(--radius-md)',
-              padding: '1rem 1.25rem', marginBottom: '1.5rem',
-              border: '1px solid var(--border)',
-            }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }}>
-                OR pay manually to this UPI ID:
-              </p>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1rem', marginBottom: '1.25rem', border: '1px solid var(--border)' }}>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }}>OR pay manually:</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <code style={{ fontFamily: 'var(--font-mono)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--accent)', flex: 1 }}>
-                  {UPI_ID}
-                </code>
-                <button
-                  onClick={copyUpiId}
-                  className="btn btn-sm btn-ghost"
-                  style={{ flexShrink: 0, fontSize: '0.8rem' }}
-                  id="copy-upi-btn"
-                >
-                  {utrCopied ? '✅ Copied!' : '📋 Copy'}
+                <code style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 700, color: 'var(--accent)', flex: 1, wordBreak: 'break-all' }}>{UPI_ID}</code>
+                <button onClick={copyUpiId} className="btn btn-sm btn-ghost" style={{ flexShrink: 0, fontSize: '0.8rem' }} id="copy-upi-btn">
+                  {utrCopied ? '✅' : '📋 Copy'}
                 </button>
               </div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                Pay exactly <strong style={{ color: 'var(--text-primary)' }}>₹{total}</strong> · Note: {confirmedOrderId}
-              </p>
             </div>
 
-            {/* UTR Entry */}
-            <div style={{
-              background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
-              padding: '1.25rem', border: '1px solid var(--border)', marginBottom: '1rem',
-            }}>
-              <label style={{ fontWeight: 600, fontSize: '0.9rem', display: 'block', marginBottom: '0.5rem' }}>
-                After paying, enter your Transaction / UTR number:
-              </label>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                Find this in your payment app under the transaction details. Helps us verify your payment faster.
-              </p>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: '1.125rem', border: '1px solid var(--border)', marginBottom: '1rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.88rem', display: 'block', marginBottom: '0.4rem' }}>After paying, enter your UTR / Transaction ID:</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. 427819273641 or T2507161234"
+                placeholder="e.g. 427819273641"
                 value={utrNumber}
                 onChange={(e) => { setUtrNumber(e.target.value); setUtrError(''); }}
                 id="utr-input"
-                style={{ marginBottom: utrError ? '0.5rem' : '0.75rem' }}
+                style={{ marginBottom: '0.75rem' }}
               />
-              {utrError && (
-                <p style={{ color: 'var(--accent-warm)', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
-                  ⚠️ {utrError}
-                </p>
-              )}
-              <button
-                onClick={handleUtrSubmit}
-                disabled={submittingUtr}
-                className="btn btn-primary btn-lg"
-                style={{ width: '100%' }}
-                id="utr-submit-btn"
-              >
-                {submittingUtr ? '⏳ Saving...' : '✅ I\'ve Paid — Confirm Order'}
+              {utrError && <p style={{ color: 'var(--accent-warm)', fontSize: '0.82rem', marginBottom: '0.75rem' }}>⚠️ {utrError}</p>}
+              <button onClick={handleUtrSubmit} disabled={submittingUtr} className="btn btn-primary btn-lg" style={{ width: '100%' }} id="utr-submit-btn">
+                {submittingUtr ? '⏳ Saving...' : "✅ I've Paid — Confirm Order"}
               </button>
             </div>
 
-            {/* Skip option */}
             <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               Paid but can't find UTR?{' '}
-              <button
-                onClick={() => { clearCart(); setStep(3); }}
-                style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.82rem', padding: 0 }}
-                id="skip-utr-btn"
-              >
-                Skip & confirm order
+              <button onClick={() => { clearCart(); setStep(3); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.82rem', padding: 0 }} id="skip-utr-btn">
+                Skip & confirm
               </button>
-              {' '}— send us your payment screenshot on WhatsApp.
             </p>
           </div>
         </div>
@@ -398,282 +312,367 @@ export default function CheckoutPage() {
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  //  STEPS 1 & 2 — CHECKOUT FORM + CONFIRM
+  //  STEPS 1 & 2 — MAIN CHECKOUT FORM
   // ══════════════════════════════════════════════════════════════════════
   return (
-    <div className="page-wrapper">
-      <div className="container">
-        <nav className="breadcrumb" aria-label="Breadcrumb">
-          <Link href="/">Home</Link>
-          <span className="separator">›</span>
-          <Link href="/cart">Cart</Link>
-          <span className="separator">›</span>
-          <span>Checkout</span>
-        </nav>
-
-        <h1 className="page-title">{t('checkout.title')}</h1>
-
-        {/* Progress steps */}
-        <div className="checkout-progress-steps">
-          {[t('checkout.step1'), t('checkout.step2')].map((s, i) => (
-            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: step > i + 1 ? 'var(--accent-green)' : step === i + 1 ? 'var(--accent)' : 'var(--border)',
-                color: step >= i + 1 ? 'white' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
-              }}>{i + 1}</div>
-              <span style={{ fontSize: '0.82rem', fontWeight: step === i + 1 ? 600 : 400, color: step === i + 1 ? 'var(--text-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s}</span>
-              {i < 1 && <span style={{ color: 'var(--border)', margin: '0 0.15rem' }}>›</span>}
-            </div>
-          ))}
-        </div>
-
-        <div className="checkout-layout">
-
-          {/* ── Left: Form or Confirm ── */}
-          <div style={{ minWidth: 0 }}>
-
-            {/* STEP 1 — Delivery form */}
-            {step === 1 && (
-              <form className="checkout-form" onSubmit={handleSubmit} id="checkout-form" noValidate>
-                <h2 className="page-title-sm" style={{ marginBottom: '1.5rem' }}>{t('checkout.step1')}</h2>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="name">{t('checkout.name')} *</label>
-                    <input id="name" name="name" className="form-input" placeholder={t('checkout.namePh')} value={form.name} onChange={handleChange} />
-                    {errors.name && <span style={{ color: 'var(--accent-warm)', fontSize: '0.82rem' }}>{errors.name}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="phone">{t('checkout.phone')} *</label>
-                    <input id="phone" name="phone" type="tel" className="form-input" placeholder={t('checkout.phonePh')} value={form.phone} onChange={handleChange} maxLength={10} />
-                    {errors.phone && <span style={{ color: 'var(--accent-warm)', fontSize: '0.82rem' }}>{errors.phone}</span>}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="email">{t('checkout.email')}</label>
-                  <input id="email" name="email" type="email" className="form-input" placeholder={t('checkout.emailPh')} value={form.email} onChange={handleChange} />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="address">{t('checkout.address')} *</label>
-                  <textarea id="address" name="address" className="form-textarea" placeholder={t('checkout.addressPh')} value={form.address} onChange={handleChange} rows={3} />
-                  {errors.address && <span style={{ color: 'var(--accent-warm)', fontSize: '0.82rem' }}>{errors.address}</span>}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="city">{t('checkout.city')} *</label>
-                    <input id="city" name="city" className="form-input" placeholder={t('checkout.cityPh')} value={form.city} onChange={handleChange} />
-                    {errors.city && <span style={{ color: 'var(--accent-warm)', fontSize: '0.82rem' }}>{errors.city}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="pincode">{t('checkout.pincode')} *</label>
-                    <input id="pincode" name="pincode" className="form-input" placeholder={t('checkout.pincodePh')} value={form.pincode} onChange={handleChange} maxLength={6} />
-                    {errors.pincode && <span style={{ color: 'var(--accent-warm)', fontSize: '0.82rem' }}>{errors.pincode}</span>}
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="form-group">
-                  <label className="form-label">{t('checkout.payment')}</label>
-                  <div className="checkout-radio-grid">
-                    {[
-                      ['cod', '💵', t('checkout.cod'), t('checkout.codSub')],
-                      ['upi', '📱', t('checkout.upi'), t('checkout.upiSub')],
-                    ].map(([v, icon, label, sub]) => (
-                      <label key={v} className={`checkout-option-card ${form.payment === v ? 'active' : ''}`}>
-                        <input type="radio" name="payment" value={v} checked={form.payment === v} onChange={handleChange} style={{ accentColor: 'var(--accent)' }} />
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{icon} {label}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.3, marginTop: 2 }}>{sub}</div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* UPI tip */}
-                {form.payment === 'upi' && (
-                  <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                    💡 You'll see a QR code to scan after confirming. Pay instantly via any UPI app — no extra charges.
-                  </div>
-                )}
-
-                {/* Delivery Slot */}
-                <div className="form-group">
-                  <label className="form-label">{t('checkout.slot')}</label>
-                  <div className="checkout-radio-grid">
-                    {[
-                      ['morning', '🌅', t('checkout.morning'), t('checkout.morningSub')],
-                      ['evening', '🌆', t('checkout.evening'), t('checkout.eveningSub')],
-                    ].map(([v, icon, label, sub]) => (
-                      <label key={v} className={`checkout-option-card ${slot === v ? 'active' : ''}`}>
-                        <input type="radio" name="slot" value={v} checked={slot === v} onChange={() => setSlot(v)} style={{ accentColor: 'var(--accent)' }} />
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{icon} {label}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.3, marginTop: 2 }}>{sub}</div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                  {!slot && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>Optional — we'll deliver at the earliest if not selected</p>}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="notes">Special Instructions (optional)</label>
-                  <textarea id="notes" name="notes" className="form-textarea" placeholder="Any special requests, cleaning preferences, etc." value={form.notes} onChange={handleChange} rows={2} />
-                </div>
-
-                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} id="checkout-next-btn">
-                  Review Order →
-                </button>
-              </form>
-            )}
-
-            {/* STEP 2 — Confirm */}
-            {step === 2 && (
-              <div className="checkout-form">
-                <h2 className="page-title-sm" style={{ marginBottom: '1.5rem' }}>Confirm Your Order</h2>
-
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                  <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>📍 Delivering to:</p>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{form.name} · {form.phone}</p>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{form.address}, {form.city} - {form.pincode}</p>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                    Payment: {form.payment === 'upi' ? '📱 UPI / QR Code' : '💵 Cash on Delivery'}
-                  </p>
-                  {slot && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>Slot: {slot === 'morning' ? '🌅 Morning (6am–12pm)' : '🌆 Evening (3pm–8pm)'}</p>}
-                  {promoApplied && <p style={{ color: 'var(--accent-green)', fontSize: '0.9rem', marginTop: '0.25rem' }}>🎁 Promo {promoApplied.code} applied — −₹{promoApplied.discount}</p>}
-                </div>
-
-                {form.payment === 'upi' && (
-                  <div style={{ background: 'rgba(15,76,117,0.07)', border: '1px solid rgba(15,76,117,0.2)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
-                    📱 After confirming, you'll be taken to a QR code page to complete payment.
-                  </div>
-                )}
-
-                {submitError && (
-                  <div style={{ color: 'var(--accent-warm)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.88rem' }}>
-                    ⚠️ {submitError}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button onClick={() => setStep(1)} className="btn btn-ghost btn-lg" style={{ flex: 1 }} id="checkout-back-btn" disabled={isSubmitting}>
-                    ← Edit Details
-                  </button>
-                  <button onClick={handleConfirm} className="btn btn-warm btn-lg" style={{ flex: 2 }} id="confirm-order-btn" disabled={isSubmitting}>
-                    {isSubmitting
-                      ? '⏳ Placing Order...'
-                      : form.payment === 'upi'
-                        ? '✓ Confirm & Pay via QR →'
-                        : '✓ Confirm & Send via WhatsApp'}
-                  </button>
-                </div>
-              </div>
-            )}
+    <div className="co-page">
+      {/* ── Progress Bar ── */}
+      <div className="co-progress">
+        {[t('checkout.step1'), t('checkout.step2')].map((s, i) => (
+          <div key={s} className={`co-progress-step ${step === i + 1 ? 'active' : step > i + 1 ? 'done' : ''}`}>
+            <span className="co-step-dot">{step > i + 1 ? '✓' : i + 1}</span>
+            <span className="co-step-label">{s}</span>
+            {i < 1 && <span className="co-step-sep">›</span>}
           </div>
+        ))}
+      </div>
 
-          {/* ── Right: Order Summary ── */}
-          <div className="cart-summary">
-            <h3>Your Order ({items.length} items)</h3>
+      <div className="co-body">
+
+        {/* ════ ORDER ITEMS ════ */}
+        <div className="co-card">
+          <div className="co-card-header">
+            <span className="co-card-icon">🛒</span>
+            <h3 className="co-card-title">Your Order ({items.length} item{items.length !== 1 ? 's' : ''})</h3>
+          </div>
+          <div className="co-items-list">
             {items.map((item) => (
-              <div key={item.id} style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', alignItems: 'center' }}>
-                <Image src={item.image} alt={item.name} width={50} height={50} style={{ objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>x{item.qty}</p>
+              <div key={item.id} className="co-item">
+                <div className="co-item-img">
+                  <Image
+                    src={item.image || '/images/placeholder.jpg'}
+                    alt={item.name}
+                    width={64}
+                    height={64}
+                    style={{ objectFit: 'cover', borderRadius: 10, display: 'block' }}
+                  />
                 </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.9rem', flexShrink: 0 }}>₹{item.price * item.qty}</span>
+                <div className="co-item-info">
+                  <p className="co-item-name">{item.name}</p>
+                  <p className="co-item-qty">Qty: {item.qty} × ₹{item.price}</p>
+                </div>
+                <span className="co-item-price">₹{item.price * item.qty}</span>
               </div>
             ))}
-            {/* Promo Code Section */}
-            <div style={{ margin: '0.75rem 0', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>🎁 Promo Code</p>
+          </div>
+        </div>
 
-              {/* Auto-suggested offer cards from admin */}
+        {/* ════ STEP 1 — DELIVERY FORM ════ */}
+        {step === 1 && (
+          <form onSubmit={handleSubmit} id="checkout-form" noValidate>
+
+            {/* Delivery Details */}
+            <div className="co-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">📍</span>
+                <h3 className="co-card-title">{t('checkout.step1')}</h3>
+              </div>
+
+              <div className="co-field">
+                <label className="form-label" htmlFor="name">{t('checkout.name')} *</label>
+                <input id="name" name="name" className="form-input" placeholder={t('checkout.namePh')} value={form.name} onChange={handleChange} />
+                {errors.name && <span className="co-error">{errors.name}</span>}
+              </div>
+
+              <div className="co-field">
+                <label className="form-label" htmlFor="phone">{t('checkout.phone')} *</label>
+                <input id="phone" name="phone" type="tel" inputMode="numeric" className="form-input" placeholder={t('checkout.phonePh')} value={form.phone} onChange={handleChange} maxLength={10} />
+                {errors.phone && <span className="co-error">{errors.phone}</span>}
+              </div>
+
+              <div className="co-field">
+                <label className="form-label" htmlFor="email">{t('checkout.email')}</label>
+                <input id="email" name="email" type="email" className="form-input" placeholder={t('checkout.emailPh')} value={form.email} onChange={handleChange} />
+              </div>
+
+              <div className="co-field">
+                <label className="form-label" htmlFor="address">{t('checkout.address')} *</label>
+                <textarea id="address" name="address" className="form-textarea co-textarea-sm" placeholder={t('checkout.addressPh')} value={form.address} onChange={handleChange} rows={3} />
+                {errors.address && <span className="co-error">{errors.address}</span>}
+              </div>
+
+              <div className="co-row-2">
+                <div className="co-field">
+                  <label className="form-label" htmlFor="city">{t('checkout.city')} *</label>
+                  <input id="city" name="city" className="form-input" placeholder={t('checkout.cityPh')} value={form.city} onChange={handleChange} />
+                  {errors.city && <span className="co-error">{errors.city}</span>}
+                </div>
+                <div className="co-field">
+                  <label className="form-label" htmlFor="pincode">{t('checkout.pincode')} *</label>
+                  <input id="pincode" name="pincode" inputMode="numeric" className="form-input" placeholder={t('checkout.pincodePh')} value={form.pincode} onChange={handleChange} maxLength={6} />
+                  {errors.pincode && <span className="co-error">{errors.pincode}</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Promo Code */}
+            <div className="co-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">🎁</span>
+                <h3 className="co-card-title">Promo Code</h3>
+              </div>
+
+              {/* Available offer chips */}
               {!promoApplied && availablePromos.length > 0 && (
-                <div style={{ marginBottom: '0.625rem' }}>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>🔥 Available Offers — tap to apply:</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    {availablePromos.map((promo) => (
-                      <button
-                        key={promo.code}
-                        onClick={async () => {
-                          setPromoInput(promo.code);
-                          setPromoError('');
-                          setPromoLoading(true);
-                          setPromoApplied(null);
-                          try {
-                            const res = await fetch('/api/promo/validate', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ code: promo.code, orderTotal: total }),
-                            });
-                            const data = await res.json();
-                            if (res.ok) setPromoApplied({ code: data.code, discount: data.discount, description: data.description });
-                            else setPromoError(data.error);
-                          } catch { setPromoError('Could not apply. Try again.'); }
-                          finally { setPromoLoading(false); }
-                        }}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '8px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                          background: 'linear-gradient(135deg, rgba(16,185,129,0.07), rgba(16,185,129,0.12))',
-                          border: '1.5px dashed rgba(16,185,129,0.4)',
-                          width: '100%', textAlign: 'left',
-                        }}
-                      >
-                        <div>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--accent)', letterSpacing: '1px' }}>{promo.code}</span>
-                          <span style={{ marginLeft: '0.5rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{promo.description}</span>
-                          {promo.minOrder > 0 && <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>· Min ₹{promo.minOrder}</span>}
-                        </div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-green)', background: 'rgba(16,185,129,0.12)', padding: '3px 8px', borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap' }}>
-                          {promo.label} →
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                <div className="co-promo-chips">
+                  <p className="co-hint">🔥 Tap to apply:</p>
+                  {availablePromos.map((promo) => (
+                    <button
+                      key={promo.code}
+                      type="button"
+                      className="co-promo-chip"
+                      onClick={async () => {
+                        setPromoInput(promo.code);
+                        setPromoError('');
+                        setPromoLoading(true);
+                        setPromoApplied(null);
+                        try {
+                          const res = await fetch('/api/promo/validate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code: promo.code, orderTotal: total }),
+                          });
+                          const data = await res.json();
+                          if (res.ok) setPromoApplied({ code: data.code, discount: data.discount, description: data.description });
+                          else setPromoError(data.error);
+                        } catch { setPromoError('Could not apply. Try again.'); }
+                        finally { setPromoLoading(false); }
+                      }}
+                    >
+                      <span className="co-promo-code">{promo.code}</span>
+                      <span className="co-promo-desc">{promo.description}</span>
+                      <span className="co-promo-badge">{promo.label}</span>
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {/* Applied state */}
               {promoApplied ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 'var(--radius-md)', padding: '8px 12px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-green)' }}>✅ {promoApplied.code} — {promoApplied.description}</span>
-                  <button onClick={() => { setPromoApplied(null); setPromoInput(''); }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}>×</button>
+                <div className="co-promo-applied">
+                  <span>✅ <strong>{promoApplied.code}</strong> — {promoApplied.description} (−₹{promoApplied.discount})</span>
+                  <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(''); }} className="co-promo-remove" aria-label="Remove promo">×</button>
                 </div>
               ) : (
-                <>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                      type="text"
-                      placeholder="Enter code"
-                      value={promoInput}
-                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                      style={{ flex: 1, height: 38, padding: '0 10px', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', fontFamily: 'var(--font-mono)', letterSpacing: '1px', outline: 'none' }}
-                      onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
-                    />
-                    <button onClick={applyPromo} disabled={promoLoading} style={{ padding: '0 14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      {promoLoading ? '...' : 'Apply'}
-                    </button>
-                  </div>
-                  {promoError && <p style={{ fontSize: '0.78rem', color: '#ef4444', marginTop: '4px' }}>{promoError}</p>}
-                </>
+                <div className="co-promo-row">
+                  <input
+                    type="text"
+                    placeholder="Enter promo code"
+                    value={promoInput}
+                    onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                    className="co-promo-input"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), applyPromo())}
+                    id="promo-input"
+                  />
+                  <button type="button" onClick={applyPromo} disabled={promoLoading} className="co-promo-btn" id="promo-apply-btn">
+                    {promoLoading ? '...' : 'Apply'}
+                  </button>
+                </div>
+              )}
+              {promoError && <p className="co-error" style={{ marginTop: 6 }}>⚠️ {promoError}</p>}
+            </div>
+
+            {/* Payment Method */}
+            <div className="co-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">💳</span>
+                <h3 className="co-card-title">{t('checkout.payment')}</h3>
+              </div>
+              <div className="co-options-list">
+                {[
+                  ['cod', '💵', t('checkout.cod'), t('checkout.codSub')],
+                  ['upi', '📱', t('checkout.upi'), t('checkout.upiSub')],
+                ].map(([v, icon, label, sub]) => (
+                  <label key={v} className={`co-option${form.payment === v ? ' selected' : ''}`}>
+                    <input type="radio" name="payment" value={v} checked={form.payment === v} onChange={handleChange} style={{ accentColor: 'var(--accent)' }} />
+                    <span className="co-option-icon">{icon}</span>
+                    <span className="co-option-body">
+                      <span className="co-option-label">{label}</span>
+                      <span className="co-option-sub">{sub}</span>
+                    </span>
+                    {form.payment === v && <span className="co-option-check">✓</span>}
+                  </label>
+                ))}
+              </div>
+              {form.payment === 'upi' && (
+                <div className="co-tip">
+                  💡 You'll see a QR code to scan after confirming. Pay instantly via any UPI app — no extra charges.
+                </div>
               )}
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-              <div className="summary-row"><span>Subtotal</span><span className="value">₹{subtotal}</span></div>
-              {savings > 0 && <div className="summary-row" style={{ color: 'var(--accent-green)' }}><span>Savings</span><span className="value">−₹{savings}</span></div>}
-              <div className="summary-row"><span>Delivery</span><span className="value" style={{ color: delivery === 0 ? 'var(--accent-green)' : 'inherit' }}>{delivery === 0 ? 'FREE' : `₹${delivery}`}</span></div>
-              {promoApplied && <div className="summary-row" style={{ color: 'var(--accent-green)' }}><span>🎁 Promo ({promoApplied.code})</span><span className="value">−₹{promoDiscount}</span></div>}
-              <div className="summary-row total"><span>Total</span><span className="value">₹{finalTotal}</span></div>
+            {/* Delivery Slot */}
+            <div className="co-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">⏰</span>
+                <h3 className="co-card-title">{t('checkout.slot')}</h3>
+              </div>
+              <div className="co-options-list">
+                {[
+                  ['morning', '🌅', t('checkout.morning'), t('checkout.morningSub')],
+                  ['evening', '🌆', t('checkout.evening'), t('checkout.eveningSub')],
+                ].map(([v, icon, label, sub]) => (
+                  <label key={v} className={`co-option${slot === v ? ' selected' : ''}`}>
+                    <input type="radio" name="slot" value={v} checked={slot === v} onChange={() => setSlot(v)} style={{ accentColor: 'var(--accent)' }} />
+                    <span className="co-option-icon">{icon}</span>
+                    <span className="co-option-body">
+                      <span className="co-option-label">{label}</span>
+                      <span className="co-option-sub">{sub}</span>
+                    </span>
+                    {slot === v && <span className="co-option-check">✓</span>}
+                  </label>
+                ))}
+              </div>
+              {!slot && <p className="co-hint" style={{ marginTop: 6 }}>Optional — we'll deliver at the earliest if not selected</p>}
             </div>
+
+            {/* Special Instructions */}
+            <div className="co-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">📝</span>
+                <h3 className="co-card-title">Special Instructions <span className="co-optional">(optional)</span></h3>
+              </div>
+              <textarea
+                id="notes"
+                name="notes"
+                className="form-textarea co-textarea-sm"
+                placeholder="Cleaning preferences, spice level, delivery notes..."
+                value={form.notes}
+                onChange={handleChange}
+                rows={3}
+              />
+            </div>
+
+            {/* Order Summary */}
+            <div className="co-card co-summary-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">🧾</span>
+                <h3 className="co-card-title">Order Summary</h3>
+              </div>
+              <div className="co-summary-rows">
+                <div className="co-summary-row">
+                  <span>Subtotal ({items.length} items)</span>
+                  <span>₹{subtotal}</span>
+                </div>
+                {savings > 0 && (
+                  <div className="co-summary-row savings">
+                    <span>🏷️ Savings</span>
+                    <span>−₹{savings}</span>
+                  </div>
+                )}
+                <div className="co-summary-row">
+                  <span>Delivery</span>
+                  <span className={delivery === 0 ? 'free' : ''}>{delivery === 0 ? '🎉 FREE' : `₹${delivery}`}</span>
+                </div>
+                {promoApplied && (
+                  <div className="co-summary-row savings">
+                    <span>🎁 Promo ({promoApplied.code})</span>
+                    <span>−₹{promoDiscount}</span>
+                  </div>
+                )}
+                <div className="co-summary-row total-row">
+                  <span>Total</span>
+                  <span className="co-total-amount">₹{finalTotal}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Spacer for sticky button */}
+            <div style={{ height: '5rem' }} />
+          </form>
+        )}
+
+        {/* ════ STEP 2 — CONFIRM ════ */}
+        {step === 2 && (
+          <div>
+            <div className="co-card">
+              <div className="co-card-header">
+                <span className="co-card-icon">📍</span>
+                <h3 className="co-card-title">Delivering to</h3>
+              </div>
+              <div className="co-confirm-detail">
+                <p><strong>{form.name}</strong> · {form.phone}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 4 }}>{form.address}, {form.city} - {form.pincode}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 4 }}>
+                  {form.payment === 'upi' ? '📱 UPI / QR Code' : '💵 Cash on Delivery'}
+                </p>
+                {slot && <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 4 }}>{slot === 'morning' ? '🌅 Morning (6am–12pm)' : '🌆 Evening (3pm–8pm)'}</p>}
+                {promoApplied && <p style={{ color: 'var(--accent-green)', fontSize: '0.88rem', fontWeight: 600, marginTop: 6 }}>🎁 {promoApplied.code} — −₹{promoApplied.discount}</p>}
+              </div>
+            </div>
+
+            {form.payment === 'upi' && (
+              <div className="co-tip" style={{ marginBottom: '1rem' }}>
+                📱 After confirming, you'll be taken to a QR code page to complete payment.
+              </div>
+            )}
+
+            {submitError && (
+              <div className="co-error-box">⚠️ {submitError}</div>
+            )}
+
+            <div className="co-card co-summary-card">
+              <div className="co-summary-rows">
+                <div className="co-summary-row"><span>Subtotal</span><span>₹{subtotal}</span></div>
+                {savings > 0 && <div className="co-summary-row savings"><span>Savings</span><span>−₹{savings}</span></div>}
+                <div className="co-summary-row"><span>Delivery</span><span className={delivery === 0 ? 'free' : ''}>{delivery === 0 ? 'FREE' : `₹${delivery}`}</span></div>
+                {promoApplied && <div className="co-summary-row savings"><span>🎁 Promo</span><span>−₹{promoDiscount}</span></div>}
+                <div className="co-summary-row total-row"><span>Total</span><span className="co-total-amount">₹{finalTotal}</span></div>
+              </div>
+            </div>
+
+            {/* Spacer for sticky button */}
+            <div style={{ height: '5rem' }} />
           </div>
+        )}
+      </div>
+
+      {/* ════ STICKY BOTTOM CTA ════ */}
+      <div className="co-sticky-cta">
+        <div className="co-sticky-inner">
+          {step === 1 ? (
+            <>
+              <div className="co-sticky-total">
+                <span className="co-sticky-label">Total</span>
+                <span className="co-sticky-price">₹{finalTotal}</span>
+              </div>
+              <button
+                type="submit"
+                form="checkout-form"
+                className="co-sticky-btn"
+                id="checkout-next-btn"
+              >
+                Review Order →
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setStep(1)}
+                className="co-sticky-back"
+                id="checkout-back-btn"
+                disabled={isSubmitting}
+              >
+                ← Edit
+              </button>
+              <div className="co-sticky-total">
+                <span className="co-sticky-label">Pay</span>
+                <span className="co-sticky-price">₹{finalTotal}</span>
+              </div>
+              <button
+                onClick={handleConfirm}
+                className="co-sticky-btn"
+                id="confirm-order-btn"
+                disabled={isSubmitting}
+                style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}
+              >
+                {isSubmitting
+                  ? '⏳ Placing...'
+                  : form.payment === 'upi'
+                    ? '✓ Confirm & Pay →'
+                    : '✓ Place Order'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
