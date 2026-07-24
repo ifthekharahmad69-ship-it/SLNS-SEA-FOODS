@@ -107,6 +107,13 @@ export default function AdminPage() {
   const [pwaPrompt, setPwaPrompt] = useState(null);   // admin PWA install prompt
   const [pwaInstalled, setPwaInstalled] = useState(false);
 
+  // ── Toast Notification ────────────────────────────────────────────────────────
+  const [toast, setToast] = useState(null); // { msg, type: 'success'|'error' }
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   // ── Product Management State (Real-time Firestore listener) ──────────────────
   const { products: liveProducts, loading: liveLoading } = useProducts();
   const [allProducts, setAllProducts] = useState(staticProducts);
@@ -225,26 +232,42 @@ export default function AdminPage() {
     setAddingProduct(true);
     try {
       let imageUrl = newProduct.image;
+      let cloudinaryPublicId = null;
       if (addImageFile) {
         setAddUploading(true);
-        imageUrl = await uploadProductImage(addImageFile, setAddUploadProgress);
-        setAddUploading(false);
+        try {
+          const result = await uploadProductImage(addImageFile, setAddUploadProgress);
+          // uploadProductImage now returns { url, public_id }
+          if (typeof result === 'object' && result.url) {
+            imageUrl = result.url;
+            cloudinaryPublicId = result.public_id || null;
+          } else {
+            imageUrl = result; // backwards compat if still a string
+          }
+        } catch (uploadErr) {
+          console.warn('Image upload failed:', uploadErr.message);
+          showToast(`⚠️ Image upload failed: ${uploadErr.message}. Saving without image.`, 'error');
+          imageUrl = '';
+        } finally {
+          setAddUploading(false);
+        }
       }
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newProduct, image: imageUrl }),
+        body: JSON.stringify({ ...newProduct, image: imageUrl, cloudinary_public_id: cloudinaryPublicId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
       setShowAddProduct(false);
       setNewProduct(EMPTY_NEW_PRODUCT);
       setAddImageFile(null);
       setAddImagePreview('');
       setAddUploadProgress(0);
-      fetchProducts();
+      showToast(`✅ "${newProduct.name || 'Product'}" added successfully!`);
     } catch (err) {
-      alert(`Failed to add product: ${err.message}`);
+      console.error('handleAddProduct error:', err);
+      showToast(`❌ Failed to add product: ${err.message}`, 'error');
     } finally {
       setAddingProduct(false);
       setAddUploading(false);
@@ -262,6 +285,7 @@ export default function AdminPage() {
       type: product.type || 'raw',
       description: product.description || '',
       image: product.image || '',
+      cloudinary_public_id: product.cloudinary_public_id || null, // track for deletion
       unit: product.unit || 'per kg',
       weight: product.weight || '1 kg',
       inStock: product.inStock !== false,
@@ -273,14 +297,37 @@ export default function AdminPage() {
 
   const saveEditedProduct = async (e) => {
     e.preventDefault();
+    if (!editData.name || !editData.price) {
+      showToast('❌ Name and price are required.', 'error');
+      return;
+    }
     setSavingEdit(true);
     try {
       let imageUrl = editData.image;
+      let newPublicId = editData.cloudinary_public_id || null;
+      const oldPublicId = editData.cloudinary_public_id || null;
+
       if (editImageFile) {
         setEditUploading(true);
-        imageUrl = await uploadProductImage(editImageFile, setEditUploadProgress);
-        setEditUploading(false);
+        try {
+          const result = await uploadProductImage(editImageFile, setEditUploadProgress);
+          if (typeof result === 'object' && result.url) {
+            imageUrl = result.url;
+            newPublicId = result.public_id || null;
+          } else {
+            imageUrl = result;
+            newPublicId = null;
+          }
+        } catch (uploadErr) {
+          console.warn('Image upload failed, keeping existing:', uploadErr.message);
+          showToast(`⚠️ Image upload failed: ${uploadErr.message}. Keeping existing image.`, 'error');
+          imageUrl = editData.image;
+          newPublicId = oldPublicId;
+        } finally {
+          setEditUploading(false);
+        }
       }
+
       const patch = {
         name: editData.name,
         price: Number(editData.price),
@@ -289,22 +336,31 @@ export default function AdminPage() {
         type: editData.type,
         description: editData.description,
         image: imageUrl,
+        cloudinary_public_id: newPublicId,
+        // Pass old_cloudinary_public_id so server can delete it if image changed
+        old_cloudinary_public_id: editImageFile ? oldPublicId : undefined,
         unit: editData.unit,
         weight: editData.weight,
         inStock: editData.inStock,
       };
-      await fetch(`/api/products/${editingProduct.id}`, {
+
+      const res = await fetch(`/api/products/${editingProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
-      // Optimistic local update
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+
+      // Optimistic local update (Firestore listener will also sync)
       setAllProducts((prev) => prev.map((p) =>
         p.id === editingProduct.id ? { ...p, ...patch } : p
       ));
+      showToast(`✅ "${editData.name}" updated successfully!`);
       setEditingProduct(null);
     } catch (err) {
-      alert(`Failed to save: ${err.message}`);
+      console.error('saveEditedProduct error:', err);
+      showToast(`❌ Failed to save: ${err.message}`, 'error');
     } finally {
       setSavingEdit(false);
       setEditUploading(false);
@@ -312,11 +368,21 @@ export default function AdminPage() {
     }
   };
 
-  // ── Delete (new products only) ──────────────────────────────────────────────
+  // ── Delete product (+ Cloudinary image cleanup) ──────────────────────────────
   const deleteNewProduct = async (id) => {
-    if (!confirm('Delete this product permanently?')) return;
+    const product = allProducts.find((p) => p.id === id);
+    if (!confirm(`Delete "${product?.name || 'this product'}" permanently? This will also remove its image from Cloudinary.`)) return;
     setAllProducts((prev) => prev.filter((p) => p.id !== id));
-    await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      showToast('🗑️ Product deleted and Cloudinary image removed.');
+    } catch (err) {
+      // Revert optimistic removal on error
+      if (product) setAllProducts((prev) => [product, ...prev]);
+      showToast(`❌ Delete failed: ${err.message}`, 'error');
+    }
   };
 
   // ── Logout ─────────────────────────────────────────────────────────────────
@@ -409,6 +475,20 @@ export default function AdminPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ paddingTop: 'var(--header-height)', minHeight: '100vh' }}>
+      {/* ── Toast Notification ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, padding: '0.75rem 1.5rem', borderRadius: '12px',
+          background: toast.type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(16,185,129,0.95)',
+          color: 'white', fontWeight: 600, fontSize: '0.9rem',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          backdropFilter: 'blur(8px)',
+          whiteSpace: 'nowrap', maxWidth: '90vw', textOverflow: 'ellipsis', overflow: 'hidden',
+        }}>
+          {toast.msg}
+        </div>
+      )}
       <div className="admin-layout">
 
         {/* ── Sidebar ── */}

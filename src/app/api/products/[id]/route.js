@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { products as staticProducts } from '@/data/products';
+import { cloudinaryDelete, extractPublicId } from '@/lib/cloudinary';
 
 // GET /api/products/[id] — fetch a single product
 // Priority: products_new → product_overrides merged with static → static fallback
@@ -48,8 +49,7 @@ export async function GET(request, { params }) {
 }
 
 // PATCH /api/products/[id] — update a product
-// For admin-created products (products_new): updates the document directly
-// For static products: saves overrides in product_overrides
+// Supports image replacement — deletes old Cloudinary image when new one is provided.
 export async function PATCH(request, { params }) {
   try {
     const { id } = params;
@@ -61,20 +61,48 @@ export async function PATCH(request, { params }) {
     if (body.originalPrice !== undefined) update.originalPrice = Number(body.originalPrice);
     if (body.name !== undefined) update.name = body.name.trim ? body.name.trim() : body.name;
     if (body.description !== undefined) update.description = body.description;
-    if (body.image !== undefined) update.image = body.image;
     if (body.category !== undefined) update.category = body.category;
     if (body.type !== undefined) update.type = body.type;
     if (body.unit !== undefined) update.unit = body.unit;
     if (body.weight !== undefined) update.weight = body.weight;
-    // Always clear _deleted when updating
+    // Always clear _deleted flag on update
     update._deleted = false;
+
+    // Image update — delete old Cloudinary image if a new one is provided
+    if (body.image !== undefined) {
+      update.image = body.image;
+
+      if (body.cloudinary_public_id !== undefined) {
+        // If we have the old public_id explicitly, delete it
+        if (body.old_cloudinary_public_id) {
+          await cloudinaryDelete(body.old_cloudinary_public_id);
+        }
+        update.cloudinary_public_id = body.cloudinary_public_id || null;
+      }
+    }
 
     // Check if this is an admin-created product (in products_new collection)
     const newDoc = await adminDb.collection('products_new').doc(id).get();
     if (newDoc.exists) {
+      // If replacing image, try to delete old one from Cloudinary
+      if (body.image !== undefined && !body.old_cloudinary_public_id) {
+        const oldPublicId = newDoc.data().cloudinary_public_id;
+        if (oldPublicId && body.image !== newDoc.data().image) {
+          await cloudinaryDelete(oldPublicId);
+        }
+      }
       await adminDb.collection('products_new').doc(id).update(update);
     } else {
-      // Static product — save override (partial update, doesn't wipe other fields)
+      // Static product — check for existing override to get old public_id
+      if (body.image !== undefined && !body.old_cloudinary_public_id) {
+        const overrideDoc = await adminDb.collection('product_overrides').doc(id).get();
+        if (overrideDoc.exists) {
+          const oldPublicId = overrideDoc.data().cloudinary_public_id;
+          if (oldPublicId && body.image !== overrideDoc.data().image) {
+            await cloudinaryDelete(oldPublicId);
+          }
+        }
+      }
       await adminDb.collection('product_overrides').doc(id).set(update, { merge: true });
     }
 
@@ -90,7 +118,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = params;
     const body = await request.json();
-    const { name, price, originalPrice, category, type, description, image, unit, weight, inStock } = body;
+    const { name, price, originalPrice, category, type, description, image, cloudinary_public_id, unit, weight, inStock } = body;
 
     if (!name || !price || !category) {
       return NextResponse.json({ error: 'Name, price and category are required' }, { status: 400 });
@@ -104,6 +132,7 @@ export async function PUT(request, { params }) {
       type: type || 'raw',
       description: description || '',
       image: image || '',
+      cloudinary_public_id: cloudinary_public_id || null,
       unit: unit || 'per kg',
       weight: weight || '1 kg',
       inStock: inStock !== false,
@@ -111,12 +140,23 @@ export async function PUT(request, { params }) {
       updatedAt: FieldValue.serverTimestamp(),
     };
 
-    // Check if this is an admin-created product
     const newDoc = await adminDb.collection('products_new').doc(id).get();
     if (newDoc.exists) {
+      // Delete old Cloudinary image if image is being replaced
+      const oldPublicId = newDoc.data().cloudinary_public_id;
+      if (oldPublicId && image && image !== newDoc.data().image) {
+        await cloudinaryDelete(oldPublicId);
+      }
       await adminDb.collection('products_new').doc(id).set(update, { merge: false });
     } else {
-      // For static products, save as override
+      // Static product override
+      const overrideDoc = await adminDb.collection('product_overrides').doc(id).get();
+      if (overrideDoc.exists) {
+        const oldPublicId = overrideDoc.data().cloudinary_public_id;
+        if (oldPublicId && image && image !== overrideDoc.data().image) {
+          await cloudinaryDelete(oldPublicId);
+        }
+      }
       await adminDb.collection('product_overrides').doc(id).set(update, { merge: true });
     }
 
@@ -127,9 +167,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE /api/products/[id] — delete a product
-// For admin-created products: deletes from products_new
-// For static products: marks with _deleted: true in product_overrides (soft delete)
+// DELETE /api/products/[id] — delete a product and its Cloudinary image
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;
@@ -137,13 +175,24 @@ export async function DELETE(request, { params }) {
     // Try deleting from products_new first (hard delete)
     const newDoc = await adminDb.collection('products_new').doc(id).get();
     if (newDoc.exists) {
+      // Delete Cloudinary image
+      const publicId = newDoc.data().cloudinary_public_id
+        || extractPublicId(newDoc.data().image);
+      await cloudinaryDelete(publicId);
+
       await adminDb.collection('products_new').doc(id).delete();
       return NextResponse.json({ success: true, deleted: 'new_product' });
     }
 
-    // For static products — soft delete via _deleted flag in override
-    // This ensures the Firestore onSnapshot listener in useProducts will
-    // filter it out with: .filter((p) => !p._deleted)
+    // For static products — soft delete via _deleted flag
+    // Also delete Cloudinary image if one was uploaded as override
+    const overrideDoc = await adminDb.collection('product_overrides').doc(id).get();
+    if (overrideDoc.exists) {
+      const publicId = overrideDoc.data().cloudinary_public_id
+        || extractPublicId(overrideDoc.data().image);
+      await cloudinaryDelete(publicId);
+    }
+
     await adminDb.collection('product_overrides').doc(id).set(
       { _deleted: true, deletedAt: FieldValue.serverTimestamp() },
       { merge: true }

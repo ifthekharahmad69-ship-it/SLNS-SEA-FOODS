@@ -55,7 +55,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
 
-    const { name, price, originalPrice, category, type, description, image, unit, weight } = body;
+    const { name, price, originalPrice, category, type, description, image, cloudinary_public_id, unit, weight } = body;
 
     if (!name || !String(name).trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
@@ -75,6 +75,7 @@ export async function POST(request) {
       type: type || 'raw',
       description: description || '',
       image: image || '',
+      cloudinary_public_id: cloudinary_public_id || null, // stored for deletion
       unit: unit || 'per kg',
       weight: weight || '1 kg',
       inStock: true,
