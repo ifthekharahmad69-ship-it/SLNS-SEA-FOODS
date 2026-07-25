@@ -6,7 +6,8 @@
  * Architecture:
  *  - Persistent module-level cache for _overrides, _newProducts, and _merged.
  *  - Firestore listeners remain active across page navigations.
- *  - Ensures updated Cloudinary image URLs override both `image` and `images[0]`.
+ *  - Updated Cloudinary image URLs override `image` and `images[0]`.
+ *  - Each product retains its distinct fallback image if not yet edited by admin.
  *  - 0ms zero-flash rendering across all customer page transitions.
  */
 
@@ -105,6 +106,9 @@ function setupListeners() {
   _listeners = [overridesUnsub, newProductsUnsub];
 }
 
+// ─────────────────────────────────────────────────────────────
+// Main hook — use this everywhere products are needed
+// ─────────────────────────────────────────────────────────────
 export function useProducts() {
   const [products, setProducts] = useState(_merged);
   const [loading, setLoading] = useState(!_initialized);
@@ -126,8 +130,7 @@ export function useProducts() {
 
     return () => {
       _subscribers.delete(handler);
-      // NOTE: We keep Firestore listeners and _merged cache active across route changes!
-      // This prevents dropping back to old static images during page transitions.
+      // Keep Firestore listeners active across route changes
     };
   }, []);
 
