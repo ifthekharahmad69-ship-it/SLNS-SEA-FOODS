@@ -77,6 +77,7 @@ export default function ProductDetailPage() {
                 sizes="(max-width: 768px) 100vw, 50vw"
                 style={{ objectFit: 'cover' }}
                 priority
+                unoptimized={images[activeImg]?.startsWith('http')}
               />
               {discount > 0 && (
                 <span className="product-card-discount" style={{ top: '1rem', right: '1rem', padding: '6px 12px', fontSize: '0.85rem' }}>

@@ -345,6 +345,7 @@ export default function CheckoutPage() {
                     width={64}
                     height={64}
                     style={{ objectFit: 'cover', borderRadius: 10, display: 'block' }}
+                    unoptimized={item.image?.startsWith('http')}
                   />
                 </div>
                 <div className="co-item-info">

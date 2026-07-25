@@ -53,11 +53,12 @@ export default function CartPage() {
                 <div key={item.id} className="cart-item" id={`cart-item-${item.id}`}>
                   <div className="cart-item-image">
                     <Image
-                      src={item.image}
+                      src={item.image || '/images/ui/placeholder.jpg'}
                       alt={item.name}
-                      width={100}
-                      height={100}
+                      fill
+                      sizes="80px"
                       style={{ objectFit: 'cover', borderRadius: '8px' }}
+                      unoptimized={item.image?.startsWith('http')}
                     />
                   </div>
                   <div className="cart-item-details">

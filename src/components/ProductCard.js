@@ -80,7 +80,7 @@ export default function ProductCard({ product }) {
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             style={{ objectFit: 'cover' }}
-            onError={(e) => { e.target.src = '/images/ui/placeholder.jpg'; }}
+            unoptimized={product.image?.startsWith('http')}
           />
           {/* Badge */}
           <span className={`product-badge ${badge.cls}`}>{badge.label}</span>
