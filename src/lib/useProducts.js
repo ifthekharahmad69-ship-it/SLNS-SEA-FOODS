@@ -5,9 +5,8 @@
  *
  * Architecture:
  *  - Persistent module-level cache for _overrides, _newProducts, and _merged.
- *  - Firestore listeners remain active across page navigations.
- *  - Updated Cloudinary image URLs override `image` and `images[0]`.
- *  - Each product retains its distinct fallback image if not yet edited by admin.
+ *  - Firestore listeners remain active across page navigations (no resets during route change).
+ *  - Strictly forces `images[0]` to match `image` whenever an image is updated by admin.
  *  - 0ms zero-flash rendering across all customer page transitions.
  */
 
@@ -24,8 +23,7 @@ let _newProducts = [];
 let _merged = computeInitialMerged();
 let _initialized = false;
 
-function buildProductImages(overrideImage, overrideImages, staticImages, staticImage) {
-  const mainImage = overrideImage || staticImage || '/images/placeholder.jpg';
+function buildProductImages(mainImage, overrideImages, staticImages) {
   const baseList = overrideImages && overrideImages.length > 0
     ? overrideImages
     : (staticImages && staticImages.length > 0 ? staticImages : [mainImage]);
@@ -38,7 +36,7 @@ function computeMerged() {
   const mergedStatic = staticProducts.map((p) => {
     const override = _overrides[p.id] || {};
     const mainImage = override.image || p.image;
-    const images = buildProductImages(override.image, override.images, p.images, p.image);
+    const images = buildProductImages(mainImage, override.images, p.images);
 
     return {
       ...p,

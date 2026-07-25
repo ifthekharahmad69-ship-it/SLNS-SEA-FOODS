@@ -71,6 +71,7 @@ export async function PATCH(request, { params }) {
     // Image update — delete old Cloudinary image if a new one is provided
     if (body.image !== undefined) {
       update.image = body.image;
+      update.images = body.image ? [body.image] : [];
 
       if (body.cloudinary_public_id !== undefined) {
         // If we have the old public_id explicitly, delete it
