@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Product overrides (price/stock/image changes to static products) ──────
+    // Anyone can READ (public product catalog), only server (Admin SDK) can WRITE
+    match /product_overrides/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Admin-created new products ────────────────────────────────────────────
+    match /products_new/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Categories ───────────────────────────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Orders ───────────────────────────────────────────────────────────────
+    match /orders/{orderId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow write: if false;
+    }
+
+    // ── Reviews ──────────────────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Promo codes ──────────────────────────────────────────────────────────
+    match /promo_codes/{promoId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

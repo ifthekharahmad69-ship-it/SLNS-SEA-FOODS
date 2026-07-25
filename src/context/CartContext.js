@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useReducer, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useProducts } from '@/lib/useProducts';
 
 const CartContext = createContext(null);
 
@@ -37,6 +38,22 @@ function cartReducer(state, action) {
       return { ...state, items: [] };
     case 'LOAD_CART':
       return { ...state, items: action.items };
+    // Sync prices/images from live Firestore without changing qty
+    case 'SYNC_PRICES':
+      return {
+        ...state,
+        items: state.items.map((cartItem) => {
+          const live = action.liveProducts.find((p) => p.id === cartItem.id);
+          if (!live) return cartItem;
+          return {
+            ...cartItem,
+            price: live.price,
+            originalPrice: live.originalPrice ?? cartItem.originalPrice,
+            image: live.image || cartItem.image,
+            inStock: live.inStock ?? cartItem.inStock,
+          };
+        }),
+      };
     default:
       return state;
   }
@@ -51,6 +68,9 @@ export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
   const currentUidRef = useRef(null); // track current user UID
 
+  // Live Firestore product data — used to sync prices on every update
+  const { products: liveProducts } = useProducts();
+
   useEffect(() => {
     // Listen to auth state — load or clear cart when user changes
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
@@ -58,11 +78,6 @@ export function CartProvider({ children }) {
       const newUid = firebaseUser?.uid || null;
 
       if (newUid !== prevUid) {
-        // Save old user's cart before switching
-        if (prevUid) {
-          // Already saved in the persist effect below — nothing to do here
-        }
-
         // Clear cart in memory first
         dispatch({ type: 'CLEAR_CART' });
 
@@ -78,12 +93,6 @@ export function CartProvider({ children }) {
             }
           } catch (_) {}
         } else {
-          // User signed out — also clear localStorage (no ghost cart)
-          if (prevUid) {
-            // Keep the signed-out user's cart saved under their key (restore on next login)
-            // but clear the active in-memory cart (already done above)
-          }
-          // Remove the generic key just in case
           try { localStorage.removeItem('slns_cart'); } catch (_) {}
         }
 
@@ -94,11 +103,18 @@ export function CartProvider({ children }) {
     return () => unsub();
   }, []);
 
+  // Sync live Firestore prices/images into cart whenever products update
+  useEffect(() => {
+    if (liveProducts && liveProducts.length > 0 && state.items.length > 0) {
+      dispatch({ type: 'SYNC_PRICES', liveProducts });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveProducts]);
+
   // Persist current user's cart to localStorage whenever it changes
   useEffect(() => {
     const uid = currentUidRef.current;
     if (uid) {
-      // Save under user-specific key
       localStorage.setItem(cartKey(uid), JSON.stringify(state.items));
     }
     // Guests: don't persist (no localStorage save)
@@ -113,7 +129,7 @@ export function CartProvider({ children }) {
   const itemCount = state.items.reduce((sum, i) => sum + i.qty, 0);
   const subtotal = state.items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const savings = state.items.reduce(
-    (sum, i) => sum + (i.originalPrice - i.price) * i.qty,
+    (sum, i) => sum + ((i.originalPrice || i.price) - i.price) * i.qty,
     0
   );
   const delivery = subtotal > 500 ? 0 : subtotal > 0 ? 49 : 0;
