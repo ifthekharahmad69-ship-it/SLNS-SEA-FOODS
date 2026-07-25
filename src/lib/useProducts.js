@@ -5,8 +5,9 @@
  *
  * Architecture:
  *  - Persistent module-level cache for _overrides, _newProducts, and _merged.
- *  - Firestore listeners remain active across page navigations (no resets during route change).
- *  - Strictly forces `images[0]` to match `image` whenever an image is updated by admin.
+ *  - Firestore listeners remain active across page navigations.
+ *  - STRICT REQUIREMENT: Only displays images explicitly uploaded/updated by Admin in Firestore.
+ *  - Fallback is strictly `/images/placeholder.jpg` (never old static codebase photos).
  *  - 0ms zero-flash rendering across all customer page transitions.
  */
 
@@ -23,20 +24,18 @@ let _newProducts = [];
 let _merged = computeInitialMerged();
 let _initialized = false;
 
-function buildProductImages(mainImage, overrideImages, staticImages) {
-  const baseList = overrideImages && overrideImages.length > 0
-    ? overrideImages
-    : (staticImages && staticImages.length > 0 ? staticImages : [mainImage]);
-
-  // Ensure mainImage is strictly at index 0 and no duplicates
-  return [mainImage, ...baseList.filter((img) => img !== mainImage)];
+function buildProductImages(overrideImage, overrideImages) {
+  if (!overrideImage) return ['/images/placeholder.jpg'];
+  const baseList = overrideImages && overrideImages.length > 0 ? overrideImages : [overrideImage];
+  return [overrideImage, ...baseList.filter((img) => img !== overrideImage)];
 }
 
 function computeMerged() {
   const mergedStatic = staticProducts.map((p) => {
     const override = _overrides[p.id] || {};
-    const mainImage = override.image || p.image;
-    const images = buildProductImages(mainImage, override.images, p.images);
+    // Strictly require admin-uploaded image from Firestore override
+    const mainImage = override.image || '/images/placeholder.jpg';
+    const images = buildProductImages(override.image, override.images);
 
     return {
       ...p,
@@ -67,7 +66,8 @@ function computeMerged() {
 function computeInitialMerged() {
   return staticProducts.map((p) => ({
     ...p,
-    images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : ['/images/placeholder.jpg']),
+    image: '/images/placeholder.jpg',
+    images: ['/images/placeholder.jpg'],
   }));
 }
 
