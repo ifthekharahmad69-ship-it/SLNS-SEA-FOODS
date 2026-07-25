@@ -5,9 +5,9 @@
  *
  * Architecture:
  *  - Persistent module-level cache for _overrides, _newProducts, and _merged.
- *  - Firestore listeners remain active across page navigations.
- *  - STRICT REQUIREMENT: Only displays images explicitly uploaded/updated by Admin in Firestore.
- *  - Fallback is strictly `/images/placeholder.jpg` (never old static codebase photos).
+ *  - Firestore listeners remain active across page navigations (no resets during route change).
+ *  - Admin Cloudinary images override both `image` and `images[0]`.
+ *  - Non-overridden products cleanly retain their OWN unique static product image (`p.image`).
  *  - 0ms zero-flash rendering across all customer page transitions.
  */
 
@@ -24,18 +24,21 @@ let _newProducts = [];
 let _merged = computeInitialMerged();
 let _initialized = false;
 
-function buildProductImages(overrideImage, overrideImages) {
-  if (!overrideImage) return ['/images/placeholder.jpg'];
-  const baseList = overrideImages && overrideImages.length > 0 ? overrideImages : [overrideImage];
-  return [overrideImage, ...baseList.filter((img) => img !== overrideImage)];
+function buildProductImages(overrideImage, overrideImages, staticImages, staticImage) {
+  const mainImage = overrideImage || staticImage || '/images/ui/placeholder.jpg';
+  const baseList = overrideImages && overrideImages.length > 0
+    ? overrideImages
+    : (staticImages && staticImages.length > 0 ? staticImages : [mainImage]);
+
+  // Ensure mainImage is strictly at index 0 and no duplicates
+  return [mainImage, ...baseList.filter((img) => img !== mainImage)];
 }
 
 function computeMerged() {
   const mergedStatic = staticProducts.map((p) => {
     const override = _overrides[p.id] || {};
-    // Strictly require admin-uploaded image from Firestore override
-    const mainImage = override.image || '/images/placeholder.jpg';
-    const images = buildProductImages(override.image, override.images);
+    const mainImage = override.image || p.image;
+    const images = buildProductImages(override.image, override.images, p.images, p.image);
 
     return {
       ...p,
@@ -48,7 +51,7 @@ function computeMerged() {
   const filteredStatic = mergedStatic.filter((p) => !p._deleted);
 
   const processedNew = _newProducts.map((np) => {
-    const mainImage = np.image || '/images/placeholder.jpg';
+    const mainImage = np.image || '/images/ui/placeholder.jpg';
     const images = np.images && np.images.length > 0
       ? [mainImage, ...np.images.filter((img) => img !== mainImage)]
       : [mainImage];
@@ -66,8 +69,7 @@ function computeMerged() {
 function computeInitialMerged() {
   return staticProducts.map((p) => ({
     ...p,
-    image: '/images/placeholder.jpg',
-    images: ['/images/placeholder.jpg'],
+    images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : ['/images/ui/placeholder.jpg']),
   }));
 }
 
