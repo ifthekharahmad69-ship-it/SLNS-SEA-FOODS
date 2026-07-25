@@ -69,7 +69,6 @@ export default function Footer() {
               <Link href="/shop/fish">Fresh Fish</Link>
               <Link href="/shop/prawns">Prawns</Link>
               <Link href="/shop/crabs">Crabs</Link>
-              <Link href="/shop/dishes">Ready Dishes</Link>
               <Link href="/search">Search All</Link>
             </div>
           </div>

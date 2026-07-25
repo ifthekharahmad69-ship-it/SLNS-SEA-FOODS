@@ -58,7 +58,6 @@ export default function Header() {
     { href: '/shop/fish', label: '🐟 ' + 'Fish' },
     { href: '/shop/prawns', label: '🦐 ' + 'Prawns' },
     { href: '/shop/crabs', label: '🦀 ' + 'Crabs' },
-    { href: '/shop/dishes', label: '🍽️ ' + 'Dishes' },
     { href: '/map', label: '📍 Find Us' },
   ];
 

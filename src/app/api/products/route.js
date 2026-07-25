@@ -90,3 +90,23 @@ export async function POST(request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+// DELETE /api/products — remove ALL products from Firestore collections
+export async function DELETE() {
+  try {
+    const [overridesSnap, newProductsSnap] = await Promise.all([
+      adminDb.collection('product_overrides').get(),
+      adminDb.collection('products_new').get(),
+    ]);
+
+    const batch = adminDb.batch();
+    overridesSnap.forEach((doc) => batch.delete(doc.ref));
+    newProductsSnap.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+
+    return NextResponse.json({ success: true, message: 'All products removed from Firestore' });
+  } catch (err) {
+    console.error('DELETE /api/products error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

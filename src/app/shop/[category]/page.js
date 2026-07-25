@@ -7,11 +7,9 @@ import { useProducts, useCategories } from '@/lib/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 const CATEGORY_META = {
-  fish:        { title: 'Fresh Fish',    icon: '🐟', desc: 'Wild-caught & farm-fresh fish — whole, fillets, and ready dishes' },
-  prawns:      { title: 'Prawns',        icon: '🦐', desc: 'Tiger prawns, vannamei & more — cleaned and ready to cook' },
-  crabs:       { title: 'Crabs',         icon: '🦀', desc: 'Live & cleaned crabs — mud crabs, blue crabs, flower crabs' },
-  'dry-seafood': { title: 'Dry Seafood', icon: '🌊', desc: 'Sun-dried & preserved seafood — traditional flavours packed with nutrition' },
-  dishes:      { title: 'Ready Dishes',  icon: '🍽️', desc: 'Authentic Andhra seafood dishes cooked fresh and delivered hot' },
+  fish:    { title: 'Fresh Fish', icon: '🐟', desc: 'Wild-caught & farm-fresh fish — whole, fillets, and steaks' },
+  prawns:  { title: 'Prawns',     icon: '🦐', desc: 'Tiger prawns, vannamei & more — cleaned and ready to cook' },
+  crabs:   { title: 'Crabs',      icon: '🦀', desc: 'Live & cleaned crabs — mud crabs, blue crabs, flower crabs' },
 };
 
 export default function ShopPage() {
@@ -24,13 +22,9 @@ export default function ShopPage() {
   const meta = CATEGORY_META[slug] || CATEGORY_META.fish;
 
   const filtered = useMemo(() => {
-    let list =
-      slug === 'dishes'
-        ? products.filter((p) => p.type === 'dish')
-        : products.filter((p) => p.category === slug);
+    let list = products.filter((p) => p.category === slug);
 
     if (typeFilter === 'raw') list = list.filter((p) => p.type === 'raw');
-    if (typeFilter === 'dish') list = list.filter((p) => p.type === 'dish');
 
     if (sortBy === 'price-asc') list = [...list].sort((a, b) => a.price - b.price);
     if (sortBy === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
@@ -39,7 +33,7 @@ export default function ShopPage() {
     return list;
   }, [slug, typeFilter, sortBy, products]);
 
-  const cats = ['fish', 'prawns', 'crabs', 'dry-seafood', 'dishes'];
+  const cats = ['fish', 'prawns', 'crabs'];
 
   return (
     <div className="page-wrapper">
@@ -76,9 +70,8 @@ export default function ShopPage() {
 
         {/* Controls */}
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {slug !== 'dishes' && (
             <div className="filter-tabs" style={{ marginBottom: 0, gap: '0.5rem' }}>
-              {[['all', 'All'], ['raw', '🐟 Raw'], ['dish', '🍽️ Dishes']].map(([v, l]) => (
+              {[['all', 'All'], ['raw', '🐟 Fresh Seafood']].map(([v, l]) => (
                 <button
                   key={v}
                   className={`filter-tab${typeFilter === v ? ' active' : ''}`}
@@ -89,7 +82,6 @@ export default function ShopPage() {
                 </button>
               ))}
             </div>
-          )}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label htmlFor="sort-select" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Sort by:</label>
             <select

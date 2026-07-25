@@ -9,8 +9,6 @@ const TABS = [
   { key: 'fish',       label: '🐟 Fish',      icon: '🐟' },
   { key: 'prawns',     label: '🦐 Prawns',    icon: '🦐' },
   { key: 'crabs',      label: '🦀 Crabs',     icon: '🦀' },
-  { key: 'dry-seafood',label: '🌊 Dry',       icon: '🌊' },
-  { key: 'dishes',     label: '🍽️ Dishes',    icon: '🍽️' },
 ];
 
 export default function CategoryShop({ staticProducts }) {
@@ -28,9 +26,7 @@ export default function CategoryShop({ staticProducts }) {
     ? []
     : active === 'all'
       ? allProducts.filter((p) => p.inStock !== false)
-      : active === 'dishes'
-        ? allProducts.filter((p) => p.type === 'dish' && p.inStock !== false)
-        : allProducts.filter((p) => p.category === active && p.type !== 'dish' && p.inStock !== false);
+      : allProducts.filter((p) => p.category === active && p.inStock !== false);
 
   const handleTab = (key) => {
     if (key === active) return;

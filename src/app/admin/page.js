@@ -826,7 +826,6 @@ export default function AdminPage() {
                       <option value="prawns">🦐 Prawns</option>
                       <option value="fish">🐟 Fish</option>
                       <option value="crabs">🦀 Crabs</option>
-                      <option value="dry-seafood">🌊 Dry Seafood</option>
                     </select>
                   </div>
 
@@ -1041,7 +1040,6 @@ export default function AdminPage() {
                   <option value="prawns">🦐 Prawns</option>
                   <option value="fish">🐟 Fish</option>
                   <option value="crabs">🦀 Crabs</option>
-                  <option value="dry-seafood">🌊 Dry Seafood</option>
                 </select>
               </div>
               <div className="form-group" style={{ margin: 0 }}>
@@ -1470,11 +1468,9 @@ function PromosTab() {
 // ── Categories Tab ─────────────────────────────────────────────────────
 function CategoriesTab() {
   const DEFAULT_CATS = [
-    { id: 'prawns',      name: 'Prawns',       slug: 'prawns',      icon: '🦐', description: 'Fresh White & Tiger Prawns', image: '/images/prawn/farhad-ibrahimzade-JocD18QpAkY-unsplash.jpg', _static: true },
-    { id: 'fish',        name: 'Fish',         slug: 'fish',        icon: '🐟', description: 'Fresh sea fish — Mullet, Seer Fish, Black Pomfret', image: '/images/fish/camila-igisk-yFU8qIDo9s4-unsplash.jpg', _static: true },
-    { id: 'crabs',       name: 'Crabs',        slug: 'crabs',       icon: '🦀', description: 'Premium live & cleaned crabs', image: '/images/crab/pexels-enginakyurt-17924397.jpg', _static: true },
-    { id: 'dry-seafood', name: 'Dry Seafood',  slug: 'dry-seafood', icon: '🌊', description: 'Sun-dried & preserved seafood', image: '/images/prawn/pexels-mahmudul-hasan-2149253486-32230044.jpg', _static: true },
-    { id: 'dishes',      name: 'Ready Dishes', slug: 'dishes',      icon: '🍽️', description: 'Cooked seafood dishes ready to serve', image: '/images/fish/pexels-nithin-mohan-2646938-21926675.jpg', _static: true },
+    { id: 'prawns',      name: 'Prawns',       slug: 'prawns',      icon: '🦐', description: 'Fresh White & Tiger Prawns', image: '/images/prawn/medium-prawns.png', _static: true },
+    { id: 'fish',        name: 'Fish',         slug: 'fish',        icon: '🐟', description: 'Fresh sea fish — Mullet, Seer Fish, Black Pomfret', image: '/images/fish/seerfish.png', _static: true },
+    { id: 'crabs',       name: 'Crabs',        slug: 'crabs',       icon: '🦀', description: 'Premium live & cleaned crabs', image: '/images/crab/mud-crab.png', _static: true },
   ];
 
   const EMPTY_CAT = { name: '', slug: '', icon: '🐟', description: '', image: '' };
