@@ -104,6 +104,7 @@ export function CartProvider({ children }) {
     // Guests: don't persist (no localStorage save)
   }, [state.items]);
 
+
   const addItem = (product) => dispatch({ type: 'ADD_ITEM', product });
   const removeItem = (id) => dispatch({ type: 'REMOVE_ITEM', id });
   const updateQty = (id, qty) => dispatch({ type: 'UPDATE_QTY', id, qty });

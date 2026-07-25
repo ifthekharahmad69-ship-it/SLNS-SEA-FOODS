@@ -1,42 +1,75 @@
 'use client';
 
 /**
- * useProducts — Real-time Firestore product sync
+ * useProducts — Real-time Firestore product sync (Persistent Singleton)
  *
  * Architecture:
- *  - Immediately renders static products (zero loading flash)
- *  - Subscribes to Firestore onSnapshot for both:
- *      • products_new      (admin-added products)
- *      • product_overrides (admin edits to static products)
- *  - Merges live Firestore data with static products in real time
- *  - Any admin CRUD change pushes to all customer browsers INSTANTLY
- *  - Cleans up Firestore listeners on component unmount
+ *  - Persistent module-level cache for _overrides, _newProducts, and _merged.
+ *  - Firestore listeners remain active across page navigations.
+ *  - Ensures updated Cloudinary image URLs override both `image` and `images[0]`.
+ *  - 0ms zero-flash rendering across all customer page transitions.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { products as staticProducts, categories as staticCategories } from '@/data/products';
 
-// Module-level shared state — one Firestore connection for all hook instances
+// Global singleton cache across entire app session
 let _listeners = [];
 let _subscribers = new Set();
 let _overrides = {};
 let _newProducts = [];
-let _merged = staticProducts; // start with static instantly
+let _merged = computeInitialMerged();
 let _initialized = false;
 
+function buildProductImages(overrideImage, overrideImages, staticImages, staticImage) {
+  const mainImage = overrideImage || staticImage || '/images/placeholder.jpg';
+  const baseList = overrideImages && overrideImages.length > 0
+    ? overrideImages
+    : (staticImages && staticImages.length > 0 ? staticImages : [mainImage]);
+
+  // Ensure mainImage is strictly at index 0 and no duplicates
+  return [mainImage, ...baseList.filter((img) => img !== mainImage)];
+}
+
 function computeMerged() {
-  // Merge static products with their Firestore overrides
-  const mergedStatic = staticProducts.map((p) => ({
-    ...p,
-    ...(_overrides[p.id] || {}),
-  }));
-  // Filter out products that were deleted via their override having _deleted: true
+  const mergedStatic = staticProducts.map((p) => {
+    const override = _overrides[p.id] || {};
+    const mainImage = override.image || p.image;
+    const images = buildProductImages(override.image, override.images, p.images, p.image);
+
+    return {
+      ...p,
+      ...override,
+      image: mainImage,
+      images,
+    };
+  });
+
   const filteredStatic = mergedStatic.filter((p) => !p._deleted);
-  _merged = [...filteredStatic, ..._newProducts];
-  // Notify all hook subscribers
+
+  const processedNew = _newProducts.map((np) => {
+    const mainImage = np.image || '/images/placeholder.jpg';
+    const images = np.images && np.images.length > 0
+      ? [mainImage, ...np.images.filter((img) => img !== mainImage)]
+      : [mainImage];
+    return {
+      ...np,
+      image: mainImage,
+      images,
+    };
+  });
+
+  _merged = [...filteredStatic, ...processedNew];
   _subscribers.forEach((fn) => fn(_merged));
+}
+
+function computeInitialMerged() {
+  return staticProducts.map((p) => ({
+    ...p,
+    images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : ['/images/placeholder.jpg']),
+  }));
 }
 
 function setupListeners() {
@@ -72,43 +105,29 @@ function setupListeners() {
   _listeners = [overridesUnsub, newProductsUnsub];
 }
 
-function teardownListeners() {
-  _listeners.forEach((unsub) => unsub());
-  _listeners = [];
-  _initialized = false;
-  _overrides = {};
-  _newProducts = [];
-  _merged = staticProducts;
-}
-
-// ─────────────────────────────────────────────────────────────
-// Main hook — use this everywhere products are needed
-// ─────────────────────────────────────────────────────────────
 export function useProducts() {
   const [products, setProducts] = useState(_merged);
   const [loading, setLoading] = useState(!_initialized);
 
   useEffect(() => {
-    // Subscribe to shared updates
+    // Start Firestore listeners if not already initialized
+    setupListeners();
+
+    // Subscribe to shared real-time updates
     const handler = (updated) => {
       setProducts([...updated]);
       setLoading(false);
     };
     _subscribers.add(handler);
 
-    // Start Firestore listeners (shared — only one connection regardless of hook instances)
-    setupListeners();
-
-    // Push current state immediately
+    // Immediately push current cached state (instant render, no static flash)
     setProducts([..._merged]);
     setLoading(false);
 
     return () => {
       _subscribers.delete(handler);
-      // Only tear down listeners when no components are using the hook
-      if (_subscribers.size === 0) {
-        teardownListeners();
-      }
+      // NOTE: We keep Firestore listeners and _merged cache active across route changes!
+      // This prevents dropping back to old static images during page transitions.
     };
   }, []);
 
@@ -125,10 +144,8 @@ let _allCats = staticCategories;
 let _catsInitialized = false;
 
 function computeCategories() {
-  // Merge: static categories + any Firestore-only additions
   const staticIds = new Set(staticCategories.map((c) => c.id));
   const newCats = _firestoreCats.filter((fc) => !staticIds.has(fc.id));
-  // For static cats, check if there's a Firestore override
   const mergedStatic = staticCategories.map((sc) => {
     const override = _firestoreCats.find((fc) => fc.id === sc.id);
     return override ? { ...sc, ...override } : sc;
@@ -151,26 +168,19 @@ function setupCatListeners() {
   _catListeners = [unsub];
 }
 
-function teardownCatListeners() {
-  _catListeners.forEach((u) => u());
-  _catListeners = [];
-  _catsInitialized = false;
-  _firestoreCats = [];
-  _allCats = staticCategories;
-}
-
 export function useCategories() {
   const [categories, setCategories] = useState(_allCats);
 
   useEffect(() => {
+    setupCatListeners();
+
     const handler = (updated) => setCategories([...updated]);
     _catSubscribers.add(handler);
-    setupCatListeners();
+
     setCategories([..._allCats]);
 
     return () => {
       _catSubscribers.delete(handler);
-      if (_catSubscribers.size === 0) teardownCatListeners();
     };
   }, []);
 
