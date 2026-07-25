@@ -45,60 +45,106 @@ export default function CartPage() {
 
         <h1 className="page-title">{t('cart.title')}</h1>
 
+        {/* Out of Stock Alert Banner */}
+        {items.some((i) => i.inStock === false) && (
+          <div style={{
+            background: '#fef2f2',
+            border: '1.5px solid #fca5a5',
+            borderRadius: '14px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
+            color: '#991b1b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            boxShadow: '0 2px 8px rgba(220,38,38,0.08)',
+          }}>
+            <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>🚨</span>
+            <div>
+              <strong style={{ fontSize: '0.95rem', display: 'block', marginBottom: '2px', color: '#dc2626' }}>
+                Cannot Checkout: Out of Stock Item(s) in Cart
+              </strong>
+              <span style={{ fontSize: '0.85rem', color: '#7f1d1d' }}>
+                Some items in your cart are currently out of stock. Please remove them below to proceed to checkout.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="cart-layout">
           {/* Items */}
           <div>
             <div className="cart-items">
-              {items.map((item) => (
-                <div key={item.id} className="cart-item" id={`cart-item-${item.id}`}>
-                  <div className="cart-item-image">
-                    <Image
-                      src={item.image || '/images/ui/placeholder.jpg'}
-                      alt={item.name}
-                      fill
-                      sizes="80px"
-                      style={{ objectFit: 'cover', borderRadius: '8px' }}
-                      unoptimized={item.image?.startsWith('http')}
-                    />
-                  </div>
-                  <div className="cart-item-details">
-                    <div className="cart-item-name">{item.name}</div>
-                    <div className="cart-item-weight">{item.weight} · {item.unit}</div>
-                    <div className="cart-item-actions">
-                      <div className="qty-control">
-                        <button
-                          className="qty-btn"
-                          onClick={() => updateQty(item.id, +(item.qty - 0.5).toFixed(1))}
-                          aria-label="Decrease quantity"
-                        >−</button>
-                        <span className="qty-value">
-                          {(() => {
-                            const q = item.qty;
-                            const w = Math.floor(q);
-                            const h = (q % 1) >= 0.4;
-                            if (w === 0 && h) return '½ kg';
-                            if (w > 0 && h) return `${w}½ kg`;
-                            return `${w} kg`;
-                          })()}
-                        </span>
-                        <button
-                          className="qty-btn"
-                          onClick={() => updateQty(item.id, +(item.qty + 0.5).toFixed(1))}
-                          aria-label="Increase quantity"
-                        >+</button>
-                      </div>
-                      <span className="cart-item-price">₹{(item.price * item.qty).toLocaleString()}</span>
+              {items.map((item) => {
+                const isItemOutOfStock = item.inStock === false;
+                return (
+                  <div
+                    key={item.id}
+                    className="cart-item"
+                    id={`cart-item-${item.id}`}
+                    style={{
+                      borderColor: isItemOutOfStock ? '#fca5a5' : undefined,
+                      background: isItemOutOfStock ? '#fff5f5' : undefined,
+                    }}
+                  >
+                    <div className="cart-item-image">
+                      <Image
+                        src={item.image || '/images/ui/placeholder.jpg'}
+                        alt={item.name}
+                        fill
+                        sizes="80px"
+                        style={{ objectFit: 'cover', borderRadius: '8px' }}
+                        unoptimized={item.image?.startsWith('http')}
+                      />
                     </div>
-                    <button
-                      className="cart-item-remove"
-                      onClick={() => removeItem(item.id)}
-                      aria-label={`Remove ${item.name} from cart`}
-                    >
-                      {t('product.remove')}
-                    </button>
+                    <div className="cart-item-details">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div className="cart-item-name">{item.name}</div>
+                        {isItemOutOfStock && (
+                          <span className="badge-out" style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px' }}>
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
+                      <div className="cart-item-weight">{item.weight} · {item.unit}</div>
+                      <div className="cart-item-actions">
+                        <div className="qty-control">
+                          <button
+                            className="qty-btn"
+                            onClick={() => updateQty(item.id, +(item.qty - 0.5).toFixed(1))}
+                            aria-label="Decrease quantity"
+                          >−</button>
+                          <span className="qty-value">
+                            {(() => {
+                              const q = item.qty;
+                              const w = Math.floor(q);
+                              const h = (q % 1) >= 0.4;
+                              if (w === 0 && h) return '½ kg';
+                              if (w > 0 && h) return `${w}½ kg`;
+                              return `${w} kg`;
+                            })()}
+                          </span>
+                          <button
+                            className="qty-btn"
+                            onClick={() => updateQty(item.id, +(item.qty + 0.5).toFixed(1))}
+                            disabled={isItemOutOfStock}
+                            aria-label="Increase quantity"
+                          >+</button>
+                        </div>
+                        <span className="cart-item-price">₹{(item.price * item.qty).toLocaleString()}</span>
+                      </div>
+                      <button
+                        className="cart-item-remove"
+                        onClick={() => removeItem(item.id)}
+                        aria-label={`Remove ${item.name} from cart`}
+                        style={{ color: isItemOutOfStock ? '#dc2626' : undefined, fontWeight: isItemOutOfStock ? 700 : undefined }}
+                      >
+                        {isItemOutOfStock ? '❌ Remove Out of Stock Item' : t('product.remove')}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Clear Cart */}
@@ -149,12 +195,27 @@ export default function CartPage() {
             </div>
 
             <div className="cart-summary-actions">
-              <Link href="/checkout" className="btn btn-primary btn-lg" id="checkout-btn" style={{ textAlign: 'center' }}>
-                {t('cart.checkout')}
-              </Link>
+              {items.some((i) => i.inStock === false) ? (
+                <button
+                  className="btn btn-out-of-stock btn-lg"
+                  disabled
+                  style={{ width: '100%', textAlign: 'center' }}
+                >
+                  🚫 Remove Out of Stock Items to Checkout
+                </button>
+              ) : (
+                <Link href="/checkout" className="btn btn-primary btn-lg" id="checkout-btn" style={{ textAlign: 'center' }}>
+                  {t('cart.checkout')}
+                </Link>
+              )}
               <button
                 className="btn btn-whatsapp btn-lg"
                 onClick={handleWhatsAppOrder}
+                disabled={items.some((i) => i.inStock === false)}
+                style={{
+                  opacity: items.some((i) => i.inStock === false) ? 0.5 : 1,
+                  cursor: items.some((i) => i.inStock === false) ? 'not-allowed' : 'pointer',
+                }}
                 id="whatsapp-cart-btn"
               >
                 <svg width="18" height="18" fill="white" viewBox="0 0 24 24">

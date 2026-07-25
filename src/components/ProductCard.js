@@ -169,18 +169,19 @@ export default function ProductCard({ product }) {
               <button
                 className="pc-bottom-btn plus"
                 onClick={handleIncrease}
+                disabled={!product.inStock}
                 aria-label="Increase"
               >+</button>
             </div>
           ) : (
             <button
-              className="btn-cart"
+              className={`btn-cart ${!product.inStock ? 'out-of-stock' : ''}`}
               onClick={handleAdd}
               disabled={!product.inStock}
               id={`add-to-cart-${product.id}`}
             >
               {!product.inStock
-                ? t('product.outOfStock')
+                ? `🚫 ${t('product.outOfStock')}`
                 : `+ ${t('product.addToCart')}`}
             </button>
           )}

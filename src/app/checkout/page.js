@@ -103,6 +103,11 @@ export default function CheckoutPage() {
 
   // ── Confirm order ────────────────────────────────────────────────────────────
   const handleConfirm = async () => {
+    const hasOutOfStock = items.some((i) => i.inStock === false);
+    if (hasOutOfStock) {
+      setSubmitError('Your cart contains out-of-stock items. Please return to cart and remove them.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError('');
     try {
@@ -328,6 +333,37 @@ export default function CheckoutPage() {
       </div>
 
       <div className="co-body">
+        {/* Out of Stock Alert Banner */}
+        {items.some((i) => i.inStock === false) && (
+          <div style={{
+            background: '#fef2f2',
+            border: '1.5px solid #fca5a5',
+            borderRadius: '14px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1rem',
+            color: '#991b1b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.85rem',
+            flexWrap: 'wrap',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.6rem' }}>🚨</span>
+              <div>
+                <strong style={{ fontSize: '0.95rem', display: 'block', color: '#dc2626' }}>
+                  Cannot Checkout: Out of Stock Item(s) in Cart
+                </strong>
+                <span style={{ fontSize: '0.85rem', color: '#7f1d1d' }}>
+                  Your cart contains items that are currently out of stock. Please return to cart and remove them.
+                </span>
+              </div>
+            </div>
+            <Link href="/cart" className="btn btn-sm" style={{ background: '#dc2626', color: 'white', fontWeight: 700, borderRadius: '8px' }}>
+              Return to Cart →
+            </Link>
+          </div>
+        )}
 
         {/* ════ ORDER ITEMS ════ */}
         <div className="co-card">
@@ -336,25 +372,35 @@ export default function CheckoutPage() {
             <h3 className="co-card-title">Your Order ({items.length} item{items.length !== 1 ? 's' : ''})</h3>
           </div>
           <div className="co-items-list">
-            {items.map((item) => (
-              <div key={item.id} className="co-item">
-                <div className="co-item-img">
-                  <Image
-                    src={item.image || '/images/placeholder.jpg'}
-                    alt={item.name}
-                    width={64}
-                    height={64}
-                    style={{ objectFit: 'cover', borderRadius: 10, display: 'block' }}
-                    unoptimized={item.image?.startsWith('http')}
-                  />
+            {items.map((item) => {
+              const isItemOutOfStock = item.inStock === false;
+              return (
+                <div key={item.id} className="co-item" style={{ background: isItemOutOfStock ? '#fff5f5' : undefined, borderRadius: '8px', padding: '4px' }}>
+                  <div className="co-item-img">
+                    <Image
+                      src={item.image || '/images/placeholder.jpg'}
+                      alt={item.name}
+                      width={64}
+                      height={64}
+                      style={{ objectFit: 'cover', borderRadius: 10, display: 'block' }}
+                      unoptimized={item.image?.startsWith('http')}
+                    />
+                  </div>
+                  <div className="co-item-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <p className="co-item-name">{item.name}</p>
+                      {isItemOutOfStock && (
+                        <span className="badge-out" style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px' }}>
+                          Out of Stock
+                        </span>
+                      )}
+                    </div>
+                    <p className="co-item-qty">Qty: {item.qty} × ₹{item.price}</p>
+                  </div>
+                  <span className="co-item-price">₹{item.price * item.qty}</span>
                 </div>
-                <div className="co-item-info">
-                  <p className="co-item-name">{item.name}</p>
-                  <p className="co-item-qty">Qty: {item.qty} × ₹{item.price}</p>
-                </div>
-                <span className="co-item-price">₹{item.price * item.qty}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -641,8 +687,15 @@ export default function CheckoutPage() {
                 form="checkout-form"
                 className="co-sticky-btn"
                 id="checkout-next-btn"
+                disabled={items.some((i) => i.inStock === false)}
+                style={{
+                  background: items.some((i) => i.inStock === false) ? '#fee2e2' : undefined,
+                  color: items.some((i) => i.inStock === false) ? '#dc2626' : undefined,
+                  border: items.some((i) => i.inStock === false) ? '1.5px solid #fca5a5' : undefined,
+                  cursor: items.some((i) => i.inStock === false) ? 'not-allowed' : undefined,
+                }}
               >
-                Review Order →
+                {items.some((i) => i.inStock === false) ? '🚫 Remove Out of Stock Items' : 'Review Order →'}
               </button>
             </>
           ) : (
@@ -663,14 +716,23 @@ export default function CheckoutPage() {
                 onClick={handleConfirm}
                 className="co-sticky-btn"
                 id="confirm-order-btn"
-                disabled={isSubmitting}
-                style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}
+                disabled={isSubmitting || items.some((i) => i.inStock === false)}
+                style={{
+                  background: items.some((i) => i.inStock === false)
+                    ? '#fee2e2'
+                    : 'linear-gradient(135deg, #f97316, #ea580c)',
+                  color: items.some((i) => i.inStock === false) ? '#dc2626' : undefined,
+                  border: items.some((i) => i.inStock === false) ? '1.5px solid #fca5a5' : undefined,
+                  cursor: items.some((i) => i.inStock === false) ? 'not-allowed' : undefined,
+                }}
               >
-                {isSubmitting
-                  ? '⏳ Placing...'
-                  : form.payment === 'upi'
-                    ? '✓ Confirm & Pay →'
-                    : '✓ Place Order'}
+                {items.some((i) => i.inStock === false)
+                  ? '🚫 Remove Out of Stock Items'
+                  : isSubmitting
+                    ? '⏳ Placing...'
+                    : form.payment === 'upi'
+                      ? '✓ Confirm & Pay →'
+                      : '✓ Place Order'}
               </button>
             </>
           )}

@@ -180,8 +180,8 @@ export default function ProductDetailPage() {
                 </div>
               </>
             ) : (
-              <button className="btn btn-ghost btn-lg" disabled style={{ width: '100%' }}>
-                Out of Stock
+              <button className="btn btn-out-of-stock btn-lg" disabled style={{ width: '100%' }}>
+                🚫 Out of Stock
               </button>
             )}
 

@@ -888,8 +888,22 @@ ul, ol {
 }
 
 .badge-out {
-  background: var(--text-muted);
-  color: white;
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.btn-cart:disabled,
+.btn-cart.out-of-stock,
+.btn-out-of-stock {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+  border: 1.5px solid #fca5a5 !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  font-weight: 700 !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .product-card-discount {
