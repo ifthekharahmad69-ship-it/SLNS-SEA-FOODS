@@ -118,10 +118,23 @@ export default function AdminPage() {
   // ── Manual Subscribe Device ────────────────────────────────────────────────
   const handleSubscribeDevice = async () => {
     if (typeof window === 'undefined') return;
+
+    const currentPerm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
+    if (currentPerm === 'denied') {
+      alert('⚠️ Notifications are BLOCKED in your browser for this site!\n\nTo fix:\n1. Click the 🔒 Lock icon in your browser address bar.\n2. Change Notifications from "Block" to "Allow".\n3. Refresh this page and click this button again!');
+      showToast('⚠️ Notifications blocked in browser. Click lock icon in address bar to Allow.', 'error');
+      return;
+    }
+
     try {
-      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-        await Notification.requestPermission();
+      if (currentPerm === 'default') {
+        const res = await Notification.requestPermission();
+        if (res === 'denied') {
+          showToast('❌ Notification permission denied.', 'error');
+          return;
+        }
       }
+
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function (OneSignal) {
         try {
@@ -135,12 +148,15 @@ export default function AdminPage() {
             await OneSignal.login(auth.currentUser.uid);
             await OneSignal.User.addTag('role', 'admin');
           }
-          showToast('✅ Device subscribed to notifications! Now click "Send Test Push".', 'success');
+          const subId = OneSignal.User?.PushSubscription?.id || 'Active';
+          showToast(`✅ Device Subscribed! (ID: ${subId.slice(0, 8)}...). Now click "2. Send Test Push".`, 'success');
         } catch (e) {
-          showToast(`⚠️ Subscription error: ${e.message}`, 'error');
+          console.error('[OneSignal] Subscribe error:', e);
+          showToast(`⚠️ OneSignal error: ${e.message || e}`, 'error');
         }
       });
     } catch (err) {
+      console.error('Subscribe error:', err);
       showToast(`❌ Error: ${err.message}`, 'error');
     }
   };
