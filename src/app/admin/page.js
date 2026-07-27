@@ -596,11 +596,35 @@ export default function AdminPage() {
           ════════════════════════════════════════════ */}
           {activeTab === 'dashboard' && (
             <>
-              <div className="admin-header">
-                <h1>Dashboard</h1>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
+              <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h1>Dashboard</h1>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                </div>
+                <button
+                  onClick={handleAdminInstall}
+                  className="btn btn-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, #0f4c75, #1a7abf)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    borderRadius: '20px',
+                    padding: '8px 16px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.85rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(15,76,117,0.3)',
+                  }}
+                  id="admin-install-app-btn"
+                >
+                  <span>📥</span>
+                  <span>{pwaInstalled ? 'Admin App Installed ✓' : 'Install Admin App'}</span>
+                </button>
               </div>
 
               <div className="stats-grid">

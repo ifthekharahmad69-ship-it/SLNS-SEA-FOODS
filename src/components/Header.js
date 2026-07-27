@@ -24,6 +24,40 @@ export default function Header() {
   const [userDropOpen, setUserDropOpen] = useState(false);
   const dropRef = useRef(null);
 
+  // ── PWA Download App state ───────────────────────────────────────────────────
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+      return;
+    }
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    });
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleDownloadApp = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') setIsInstalled(true);
+      setInstallPrompt(null);
+    } else {
+      setShowInstallGuide(true);
+    }
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
@@ -104,6 +138,31 @@ export default function Header() {
 
           {/* Actions */}
           <div className="header-actions">
+            {/* 📥 Install / Download App Button */}
+            <button
+              onClick={handleDownloadApp}
+              className="btn btn-sm"
+              style={{
+                background: 'linear-gradient(135deg, #0f4c75, #1a7abf)',
+                color: '#ffffff',
+                fontWeight: 700,
+                borderRadius: '20px',
+                padding: '6px 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.78rem',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(15,76,117,0.25)',
+              }}
+              title="Download & Install App"
+              id="header-install-app-btn"
+            >
+              <span style={{ fontSize: '0.9rem' }}>📥</span>
+              <span>{isInstalled ? 'App Installed ✓' : 'Download App'}</span>
+            </button>
+
             {/* Language Switcher — hidden on mobile to save space */}
             <span className="hide-mobile"><LanguageSwitcher /></span>
 
@@ -272,6 +331,42 @@ export default function Header() {
             <p style={{ fontSize: '0.75rem', margin: '4px 0 0' }}>
               📞 <a href="tel:+917981502973" style={{ color: 'var(--accent-green)', fontWeight: 600 }}>+91 79815 02973</a>
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Install App Modal Guide */}
+      {showInstallGuide && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setShowInstallGuide(false)}>
+          <div style={{ background: '#ffffff', borderRadius: '20px', padding: '1.75rem', maxWidth: '420px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowInstallGuide(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748b' }}>✕</button>
+
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📲</div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f4c75', margin: 0 }}>Install App on Your Device</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '4px 0 0' }}>Quick 1-tap access for Users & Admins</p>
+            </div>
+
+            <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', fontSize: '0.88rem', lineHeight: 1.6, color: '#334155' }}>
+              <strong style={{ display: 'block', color: '#0f4c75', marginBottom: '0.5rem' }}>📱 Android / Chrome / Windows / Mac:</strong>
+              1. Look at your browser address bar top-right.<br />
+              2. Click the <strong>📥 Install</strong> or <strong>⊕ Add</strong> icon in the address bar.<br />
+              3. Tap <strong>Install</strong> — the app will be added to your home screen/desktop!
+            </div>
+
+            <div style={{ background: '#f0f9ff', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem', fontSize: '0.88rem', lineHeight: 1.6, color: '#0369a1' }}>
+              <strong style={{ display: 'block', color: '#0284c7', marginBottom: '0.5rem' }}>🍎 iPhone / iPad (Safari):</strong>
+              1. Tap the <strong>Share ⬆️</strong> button at bottom of Safari.<br />
+              2. Scroll down & tap <strong>"Add to Home Screen ➕"</strong>.<br />
+              3. Tap <strong>Add</strong> top-right!
+            </div>
+
+            <button
+              onClick={() => setShowInstallGuide(false)}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', background: '#0f4c75', color: '#ffffff', border: 'none', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer' }}
+            >
+              Got It ✓
+            </button>
           </div>
         </div>
       )}
