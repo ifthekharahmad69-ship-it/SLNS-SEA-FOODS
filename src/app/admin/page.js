@@ -826,6 +826,7 @@ export default function AdminPage() {
                       <option value="prawns">🦐 Prawns</option>
                       <option value="fish">🐟 Fish</option>
                       <option value="crabs">🦀 Crabs</option>
+                      <option value="pickles">🫙 Pickles</option>
                     </select>
                   </div>
 
@@ -1040,6 +1041,7 @@ export default function AdminPage() {
                   <option value="prawns">🦐 Prawns</option>
                   <option value="fish">🐟 Fish</option>
                   <option value="crabs">🦀 Crabs</option>
+                  <option value="pickles">🫙 Pickles</option>
                 </select>
               </div>
               <div className="form-group" style={{ margin: 0 }}>

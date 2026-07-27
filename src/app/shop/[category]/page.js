@@ -10,6 +10,7 @@ const CATEGORY_META = {
   fish:    { title: 'Fresh Fish', icon: '🐟', desc: 'Wild-caught & farm-fresh fish — whole, fillets, and steaks' },
   prawns:  { title: 'Prawns',     icon: '🦐', desc: 'Tiger prawns, vannamei & more — cleaned and ready to cook' },
   crabs:   { title: 'Crabs',      icon: '🦀', desc: 'Live & cleaned crabs — mud crabs, blue crabs, flower crabs' },
+  pickles: { title: 'Non-Veg Pickles', icon: '🫙', desc: 'Authentic Andhra-style spicy Chicken & Prawn pickles' },
 };
 
 export default function ShopPage() {
@@ -33,7 +34,7 @@ export default function ShopPage() {
     return list;
   }, [slug, typeFilter, sortBy, products]);
 
-  const cats = ['fish', 'prawns', 'crabs'];
+  const cats = ['fish', 'prawns', 'crabs', 'pickles'];
 
   return (
     <div className="page-wrapper">

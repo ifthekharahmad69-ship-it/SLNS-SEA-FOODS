@@ -29,6 +29,15 @@ export const categories = [
     icon: '🦀',
     count: 0,
   },
+  {
+    id: 'pickles',
+    name: 'Non-Veg Pickles',
+    slug: 'pickles',
+    description: 'Authentic Andhra-style Non-Veg Pickles — Spicy Chicken & Prawn Pickles made with ground spices',
+    image: '/images/prawn-pickle.png',
+    icon: '🫙',
+    count: 0,
+  },
 ];
 
 export const products = [
@@ -299,6 +308,54 @@ export const products = [
     freshness: 'Live Handpicked',
     serves: '2-3 people',
     tags: ['crabs', 'mud-crab', 'live', 'raw'],
+  },
+
+  // ============================================================
+  // NON-VEG PICKLES
+  // ============================================================
+  {
+    id: 'pickle-chicken-boneless',
+    name: 'Chicken Pickle (Boneless)',
+    description: 'Authentic Andhra homestyle Boneless Chicken Pickle made with fresh chicken pieces, aromatic ground spices, and cold-pressed oil. Spicy & flavorful.',
+    category: 'pickles',
+    type: 'pickle',
+    price: 1300,
+    originalPrice: 1500,
+    unit: 'per kg',
+    weight: '1 kg',
+    weightGrams: 1000,
+    inStock: true,
+    isFeatured: true,
+    badge: 'Special',
+    image: '/images/chicken-boneless-pickle.png',
+    images: ['/images/chicken-boneless-pickle.png'],
+    rating: 4.9,
+    reviewsCount: 42,
+    freshness: 'Freshly Prepared',
+    serves: '10-12 servings',
+    tags: ['pickles', 'chicken', 'boneless', 'andhra-pickle', 'spicy'],
+  },
+  {
+    id: 'pickle-prawn',
+    name: 'Prawn Pickle',
+    description: 'Rich & tangy Andhra Prawn Pickle made with fresh prawns fried to perfection and marinated in traditional hot spices. Long shelf life.',
+    category: 'pickles',
+    type: 'pickle',
+    price: 1850,
+    originalPrice: 2100,
+    unit: 'per kg',
+    weight: '1 kg',
+    weightGrams: 1000,
+    inStock: true,
+    isFeatured: true,
+    badge: 'Bestseller',
+    image: '/images/prawn-pickle.png',
+    images: ['/images/prawn-pickle.png'],
+    rating: 5.0,
+    reviewsCount: 58,
+    freshness: 'Freshly Prepared',
+    serves: '10-12 servings',
+    tags: ['pickles', 'prawn', 'seafood-pickle', 'andhra-pickle', 'spicy'],
   },
 ];
 
