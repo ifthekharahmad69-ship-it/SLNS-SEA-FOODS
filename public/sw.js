@@ -1,15 +1,17 @@
-// Service Worker for SLNS Fresh Sea Foods — Customer + Admin PWAs
-// Strategy:
-//   - API routes: Network first (always fresh data)
-//   - Images:     Cache first (faster loading)
-//   - Pages/CSS/JS: Stale-while-revalidate
-//   - Offline:    Show fallback page
+// ── SLNS Fresh Sea Foods — Unified Service Worker ──────────────────────────
+// Combines PWA caching + OneSignal push notifications in ONE file.
+// Having two SW files at the same scope caused push to never fire.
+//
+// IMPORTANT: OneSignal MUST be told to use this file via serviceWorkerPath.
 
-const CACHE_VERSION = 'v1';
+// Import OneSignal's push handler FIRST so it can register its push listener
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
+const CACHE_VERSION = 'v3'; // bumped — forces cache refresh on all devices
 const CUSTOMER_CACHE = `customer-${CACHE_VERSION}`;
 const IMAGE_CACHE = `images-${CACHE_VERSION}`;
 
-// Core files to cache immediately on install
+// Core files to pre-cache on install
 const PRECACHE_URLS = [
   '/',
   '/shop/fish',
@@ -20,21 +22,19 @@ const PRECACHE_URLS = [
   '/offline',
 ];
 
-// ── Install: Pre-cache core app shell ────────────────────────────────────────
+// ── Install ───────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CUSTOMER_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_URLS).catch(() => {
-        // Don't fail install if some URLs aren't available offline
-        console.log('[SW] Some precache URLs failed — continuing anyway');
-      });
-    })
+    caches.open(CUSTOMER_CACHE).then((cache) =>
+      cache.addAll(PRECACHE_URLS).catch(() => {
+        console.log('[SW] Some precache URLs failed — continuing');
+      })
+    )
   );
-  // Activate immediately without waiting
   self.skipWaiting();
 });
 
-// ── Activate: Clean up old caches ────────────────────────────────────────────
+// ── Activate: clean old caches ────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -48,19 +48,19 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: Smart caching strategy ────────────────────────────────────────────
+// ── Fetch: smart caching strategy ────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and non-same-origin requests
+  // Skip non-GET and non-same-origin
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // 1. API routes → Network first, no cache
+  // 1. API → network first, no cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() =>
-        new Response(JSON.stringify({ error: 'Offline — please check connection' }), {
+        new Response(JSON.stringify({ error: 'Offline — check connection' }), {
           headers: { 'Content-Type': 'application/json' },
         })
       )
@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Images → Cache first, fall back to network
+  // 2. Images → cache first
   if (
     url.pathname.match(/\.(png|jpg|jpeg|webp|avif|svg|gif|ico)$/) ||
     url.hostname.includes('cloudinary.com') ||
@@ -88,13 +88,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Admin routes → Network only (always needs fresh auth)
+  // 3. Admin/login → network only
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/login')) {
     event.respondWith(fetch(request));
     return;
   }
 
-  // 4. Everything else → Stale-while-revalidate (fast + fresh)
+  // 4. Everything else → stale-while-revalidate
   event.respondWith(
     caches.open(CUSTOMER_CACHE).then((cache) =>
       cache.match(request).then((cached) => {
@@ -102,9 +102,7 @@ self.addEventListener('fetch', (event) => {
           if (response.ok) cache.put(request, response.clone());
           return response;
         });
-        // Return cached immediately, update cache in background
         return cached || networkFetch.catch(() => {
-          // Offline fallback for navigation requests
           if (request.mode === 'navigate') {
             return cache.match('/offline') || cache.match('/');
           }
@@ -114,23 +112,4 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// ── Push Notifications (for future WhatsApp-style alerts) ───────────────────
-self.addEventListener('push', (event) => {
-  if (!event.data) return;
-  const data = event.data.json();
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'SLNS Fresh Sea Foods', {
-      body: data.body || '',
-      icon: '/icons/customer-192.png',
-      badge: '/icons/customer-192.png',
-      data: { url: data.url || '/' },
-    })
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.openWindow(event.notification.data?.url || '/')
-  );
-});
+// NOTE: push and notificationclick are handled by OneSignalSDK.sw.js above
