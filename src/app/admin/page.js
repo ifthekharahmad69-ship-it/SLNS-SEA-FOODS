@@ -121,8 +121,8 @@ export default function AdminPage() {
 
     const currentPerm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
     if (currentPerm === 'denied') {
-      alert('⚠️ Notifications are BLOCKED in your browser for this site!\n\nTo fix:\n1. Click the 🔒 Lock icon in your browser address bar.\n2. Change Notifications from "Block" to "Allow".\n3. Refresh this page and click this button again!');
-      showToast('⚠️ Notifications blocked in browser. Click lock icon in address bar to Allow.', 'error');
+      alert('⚠️ Notifications are BLOCKED in your browser!\n\nClick the 🔒 Lock icon in your address bar → set Notifications to Allow → Refresh!');
+      showToast('⚠️ Notifications blocked in browser. Change to Allow & Refresh.', 'error');
       return;
     }
 
@@ -130,13 +130,12 @@ export default function AdminPage() {
       if (currentPerm === 'default') {
         const res = await Notification.requestPermission();
         if (res === 'denied') {
-          showToast('❌ Notification permission denied.', 'error');
+          showToast('❌ Permission denied.', 'error');
           return;
         }
       }
 
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async function (OneSignal) {
+      const doSubscribe = async (OneSignal) => {
         try {
           if (OneSignal.Notifications?.requestPermission) {
             await OneSignal.Notifications.requestPermission();
@@ -149,12 +148,22 @@ export default function AdminPage() {
             await OneSignal.User.addTag('role', 'admin');
           }
           const subId = OneSignal.User?.PushSubscription?.id || 'Active';
+          alert('✅ SUCCESS! Your device is now subscribed to notifications!\n\nNow click "2. Send Test Push".');
           showToast(`✅ Device Subscribed! (ID: ${subId.slice(0, 8)}...). Now click "2. Send Test Push".`, 'success');
         } catch (e) {
           console.error('[OneSignal] Subscribe error:', e);
           showToast(`⚠️ OneSignal error: ${e.message || e}`, 'error');
         }
-      });
+      };
+
+      // If OneSignal is already loaded in window, run directly! Otherwise push to Deferred
+      if (window.OneSignal && typeof window.OneSignal.User !== 'undefined') {
+        await doSubscribe(window.OneSignal);
+      } else {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(doSubscribe);
+        showToast('⏳ Subscribing device...', 'success');
+      }
     } catch (err) {
       console.error('Subscribe error:', err);
       showToast(`❌ Error: ${err.message}`, 'error');
