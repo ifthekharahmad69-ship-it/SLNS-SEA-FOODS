@@ -115,6 +115,36 @@ export default function AdminPage() {
     setTimeout(() => setToast(null), 5000);
   };
 
+  // ── Manual Subscribe Device ────────────────────────────────────────────────
+  const handleSubscribeDevice = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function (OneSignal) {
+        try {
+          if (OneSignal.Notifications?.requestPermission) {
+            await OneSignal.Notifications.requestPermission();
+          }
+          if (OneSignal.User?.PushSubscription?.optIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          if (auth.currentUser) {
+            await OneSignal.login(auth.currentUser.uid);
+            await OneSignal.User.addTag('role', 'admin');
+          }
+          showToast('✅ Device subscribed to notifications! Now click "Send Test Push".', 'success');
+        } catch (e) {
+          showToast(`⚠️ Subscription error: ${e.message}`, 'error');
+        }
+      });
+    } catch (err) {
+      showToast(`❌ Error: ${err.message}`, 'error');
+    }
+  };
+
   // ── Test Push Notification ──────────────────────────────────────────────────
   const handleTestPush = async () => {
     setTestingPush(true);
@@ -124,7 +154,7 @@ export default function AdminPage() {
       if (data.success && data.recipients > 0) {
         showToast(`✅ Test push sent to ${data.recipients} device(s)! Check your phone.`, 'success');
       } else if (data.success && data.recipients === 0) {
-        showToast('⚠️ API works but 0 recipients — no devices subscribed yet. Click 🔔 Enable Alerts on the site first!', 'error');
+        showToast('⚠️ API works but 0 recipients — no devices subscribed yet. Click "1. Enable Device Alerts" first!', 'error');
       } else {
         showToast(`❌ Push failed: ${JSON.stringify(data.errors || data.error)}`, 'error');
       }
@@ -626,6 +656,29 @@ export default function AdminPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
+                    onClick={handleSubscribeDevice}
+                    className="btn btn-sm"
+                    style={{
+                      background: 'linear-gradient(135deg, #0f3460, #0f4c75)',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(15,52,96,0.3)',
+                    }}
+                    id="admin-subscribe-device-btn"
+                  >
+                    <span>📱</span>
+                    <span>1. Enable Device Alerts</span>
+                  </button>
+
+                  <button
                     onClick={handleTestPush}
                     disabled={testingPush}
                     className="btn btn-sm"
@@ -647,7 +700,7 @@ export default function AdminPage() {
                     id="admin-test-push-btn"
                   >
                     <span>🔔</span>
-                    <span>{testingPush ? 'Sending Test...' : 'Test Push Notification'}</span>
+                    <span>{testingPush ? 'Sending Test...' : '2. Send Test Push'}</span>
                   </button>
 
                   <button
