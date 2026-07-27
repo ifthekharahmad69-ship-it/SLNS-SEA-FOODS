@@ -75,7 +75,7 @@ export default function ProductDetailPage() {
                 alt={product.name}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                style={{ objectFit: 'cover' }}
+                style={{ objectFit: 'contain' }}
                 priority
                 unoptimized={images[activeImg]?.startsWith('http')}
               />

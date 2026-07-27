@@ -380,9 +380,9 @@ export default function CheckoutPage() {
                     <Image
                       src={item.image || '/images/placeholder.jpg'}
                       alt={item.name}
-                      width={64}
-                      height={64}
-                      style={{ objectFit: 'cover', borderRadius: 10, display: 'block' }}
+                      width={54}
+                      height={54}
+                      style={{ objectFit: 'cover', borderRadius: 8, display: 'block', border: '1px solid var(--border)' }}
                       unoptimized={item.image?.startsWith('http')}
                     />
                   </div>
