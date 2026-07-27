@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { notifyAdmins } from '@/lib/onesignal';
 
 // Generate a short human-readable order ID: ORD-A3X9K
 function generateOrderId() {
@@ -62,6 +63,14 @@ export async function POST(request) {
     const docRef = await adminDb.collection('orders').add(orderData);
 
     console.log(`✅ New order created: ${orderId} (doc: ${docRef.id})`);
+
+    // ── 🔔 Push notification to all admins ───────────────────────────────────
+    // Fire and forget — don't await so order response is instant
+    notifyAdmins({
+      title: `🛒 New Order! ${orderId}`,
+      body: `₹${Number(total).toLocaleString('en-IN')} from ${name.trim()} · ${payment?.toUpperCase() || 'COD'}`,
+      url: 'https://slns-sea-foods.vercel.app/admin',
+    }).catch((err) => console.error('[OneSignal] Admin notify failed:', err));
 
     return NextResponse.json({ success: true, orderId, docId: docRef.id }, { status: 201 });
   } catch (error) {

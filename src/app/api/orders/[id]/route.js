@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { notifyUser, getStatusNotification } from '@/lib/onesignal';
 
 const VALID_STATUSES = ['pending', 'confirmed', 'out_for_delivery', 'delivered', 'cancelled'];
 
@@ -81,6 +82,31 @@ export async function PATCH(request, { params }) {
     }
 
     await adminDb.collection('orders').doc(id).update(update);
+
+    // ── 🔔 Push notification to the customer on status change ─────────────────
+    if (status && status !== 'pending') {
+      try {
+        // Fetch the order to get userId and orderId
+        const orderDoc = await adminDb.collection('orders').doc(id).get();
+        const orderData = orderDoc.data();
+
+        if (orderData?.userId && orderData?.orderId) {
+          const notif = getStatusNotification(status, orderData.orderId);
+          if (notif) {
+            // Fire and forget — don't delay the admin panel response
+            notifyUser({
+              userId: orderData.userId,
+              title: notif.title,
+              body: notif.body,
+              url: 'https://slns-sea-foods.vercel.app/track',
+            }).catch((err) => console.error('[OneSignal] Customer notify failed:', err));
+          }
+        }
+      } catch (notifErr) {
+        // Never let notification failure break the status update
+        console.error('[OneSignal] Status notify error:', notifErr.message);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

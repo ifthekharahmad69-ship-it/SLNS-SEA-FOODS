@@ -9,6 +9,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import GuestPrompt from '@/components/GuestPrompt';
+import NotificationSetup from '@/components/NotificationSetup';
 
 export const viewport = {
   themeColor: '#0f4c75',
@@ -67,6 +68,7 @@ export default function RootLayout({ children }) {
               <WhatsAppFloat />
               <GuestPrompt />
               <PWAInstallPrompt />
+              <NotificationSetup />
             </CartProvider>
           </AuthProvider>
         </LanguageProvider>
