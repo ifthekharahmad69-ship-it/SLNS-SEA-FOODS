@@ -1,8 +1,7 @@
 'use client';
 
 // NotificationSetup.js
-// Integrates OneSignal Web Push Notifications with automatic Slidedown prompt
-// and a floating "Enable Alerts 🔔" button on screen.
+// Synchronous User Gesture Permission Handler + OneSignal v16 Registration
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -20,11 +19,10 @@ export default function NotificationSetup() {
   const [showBanner, setShowBanner] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
 
-  // ── Step 1: Initialize OneSignal & auto trigger prompt ──────────────────────
+  // ── Step 1: Initialize OneSignal SDK on mount ────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check existing browser permission flag
     const isAlreadyGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
     setPermissionGranted(isAlreadyGranted);
 
@@ -41,13 +39,16 @@ export default function NotificationSetup() {
         const isGranted = Notification?.permission === 'granted';
         setPermissionGranted(isGranted);
 
-        if (!isGranted && Notification?.permission !== 'denied') {
-          setShowBanner(true);
+        if (isGranted) {
           try {
-            await OneSignal.Slidedown?.promptPush?.();
+            if (OneSignal.User?.PushSubscription?.optIn) {
+              await OneSignal.User.PushSubscription.optIn();
+            }
           } catch (e) {
-            console.log('[OneSignal] Slidedown prompt fallback:', e);
+            console.warn('[OneSignal] OptIn error:', e);
           }
+        } else if (Notification?.permission !== 'denied') {
+          setShowBanner(true);
         }
       } catch (err) {
         console.error('[OneSignal v16] Init error:', err);
@@ -55,7 +56,7 @@ export default function NotificationSetup() {
     });
   }, []);
 
-  // ── Step 2: Tag logged in Firebase users and admin roles ────────────────────
+  // ── Step 2: Sync logged in user UID and admin role tags ────────────────────
   useEffect(() => {
     if (!user || typeof window === 'undefined') return;
 
@@ -73,36 +74,48 @@ export default function NotificationSetup() {
     });
   }, [user]);
 
-  // ── Step 3: Trigger push prompt when tapping Allow ──────────────────────────
-  const handleAllow = () => {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function (OneSignal) {
-      try {
-        if (OneSignal.Slidedown?.promptPush) {
-          await OneSignal.Slidedown.promptPush();
-        } else if (OneSignal.Notifications?.requestPermission) {
-          await OneSignal.Notifications.requestPermission();
-        }
-
-        const isGranted = Notification?.permission === 'granted';
-        setPermissionGranted(isGranted);
-        if (isGranted) setShowBanner(false);
-
-        if (user) {
-          const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
-          await OneSignal.User.addTag('role', isAdmin ? 'admin' : 'customer');
-        }
-      } catch (err) {
-        console.error('[OneSignal v16] Permission error:', err);
+  // ── Step 3: Direct User Gesture Permission Trigger ──────────────────────────
+  const handleAllow = async () => {
+    // 1. Immediately call browser native requestPermission in direct response to click
+    let result = 'default';
+    try {
+      if (typeof Notification !== 'undefined') {
+        result = await Notification.requestPermission();
       }
-    });
+    } catch (e) {
+      console.warn('Native permission error:', e);
+    }
+
+    const isGranted = result === 'granted' || (typeof Notification !== 'undefined' && Notification.permission === 'granted');
+    setPermissionGranted(isGranted);
+    if (isGranted) setShowBanner(false);
+
+    // 2. Register push token & tags with OneSignal SDK
+    if (typeof window !== 'undefined') {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function (OneSignal) {
+        try {
+          if (OneSignal.User?.PushSubscription?.optIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          } else if (OneSignal.Notifications?.requestPermission) {
+            await OneSignal.Notifications.requestPermission();
+          }
+
+          if (user) {
+            const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
+            await OneSignal.User?.addTag?.('role', isAdmin ? 'admin' : 'customer');
+          }
+        } catch (err) {
+          console.error('[OneSignal v16] Post-permission error:', err);
+        }
+      });
+    }
   };
 
   const handleDismiss = () => {
     setShowBanner(false);
   };
 
-  // If already granted, don't render anything
   if (permissionGranted) return null;
 
   return (
