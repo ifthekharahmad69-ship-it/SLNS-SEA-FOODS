@@ -1,8 +1,7 @@
 'use client';
 
 // NotificationSetup.js — OneSignal Web Push v16
-// Fixes "All included players are not subscribed":
-// Always ensures OneSignal.User.PushSubscription.optIn() is called when permission is granted.
+// Integrates OneSignal push subscription natively.
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -47,9 +46,13 @@ export default function NotificationSetup() {
           setPermissionGranted(true);
           setShowBanner(false);
 
-          // CRITICAL: Always opt-in granted devices to register push token with OneSignal
           try {
-            await OneSignal.User.PushSubscription.optIn();
+            if (OneSignal.Notifications?.requestPermission) {
+              await OneSignal.Notifications.requestPermission();
+            }
+            if (OneSignal.User?.PushSubscription?.optIn) {
+              await OneSignal.User.PushSubscription.optIn();
+            }
             console.log('[OneSignal] Auto opt-in successful ✅');
           } catch (e) {
             console.warn('[OneSignal] Auto opt-in warning:', e?.message || e);
@@ -68,7 +71,6 @@ export default function NotificationSetup() {
             }
           }
         } else if (perm === 'default') {
-          // Show prompt banner after 2s if permission not asked yet
           setTimeout(() => setShowBanner(true), 2000);
         }
       } catch (err) {
@@ -89,7 +91,9 @@ export default function NotificationSetup() {
           const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
           const role = isAdmin ? 'admin' : 'customer';
           await OneSignal.User.addTag('role', role);
-          await OneSignal.User.PushSubscription.optIn();
+          if (OneSignal.User?.PushSubscription?.optIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          }
           console.log(`[OneSignal] User ${user.uid} logged in & tagged as "${role}" ✅`);
         }
       } catch (err) {
@@ -106,38 +110,25 @@ export default function NotificationSetup() {
     const timeoutId = setTimeout(() => setLoading(false), 8000);
 
     try {
-      let permission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
-
-      console.log('[Notif] User permission result:', permission);
-
-      if (permission === 'granted') {
-        setPermissionGranted(true);
-
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        window.OneSignalDeferred.push(async function (OneSignal) {
-          try {
-            // Opt in device to get player ID / push token registered
-            await OneSignal.User.PushSubscription.optIn();
-            console.log('[OneSignal] Manual Push opt-in ✅');
-
-            if (user) {
-              await OneSignal.login(user.uid);
-              const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
-              const role = isAdmin ? 'admin' : 'customer';
-              await OneSignal.User.addTag('role', role);
-              console.log(`[OneSignal] Tagged as "${role}" ✅`);
-            }
-          } catch (e) {
-            console.warn('[OneSignal] optIn error:', e?.message || e);
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function (OneSignal) {
+        try {
+          if (OneSignal.Notifications?.requestPermission) {
+            await OneSignal.Notifications.requestPermission();
           }
-        });
-      } else {
-        console.warn('[Notif] Permission was not granted (state: ' + permission + ')');
-      }
+          if (OneSignal.User?.PushSubscription?.optIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          setPermissionGranted(true);
+          if (user) {
+            await OneSignal.login(user.uid);
+            const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
+            await OneSignal.User.addTag('role', isAdmin ? 'admin' : 'customer');
+          }
+        } catch (e) {
+          console.warn('[OneSignal] handleAllow error:', e?.message || e);
+        }
+      });
     } catch (err) {
       console.error('[Notif] handleAllow error:', err);
     } finally {
@@ -148,7 +139,6 @@ export default function NotificationSetup() {
 
   const handleDismiss = () => setShowBanner(false);
 
-  // If permission is granted, we don't render the banner, but the useEffect above keeps sync active
   if (permissionGranted) return null;
 
   return (
