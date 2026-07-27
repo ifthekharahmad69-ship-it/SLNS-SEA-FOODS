@@ -17,7 +17,7 @@ async function sendNotification(payload) {
   }
 
   try {
-    console.log(`[OneSignal] Sending push notification with App ID: ${appId.slice(0, 8)}...`);
+    console.log(`[OneSignal] Sending push → App: ${appId.slice(0, 8)}... Target: ${JSON.stringify(Object.keys(payload))}`);
 
     const res = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -28,7 +28,6 @@ async function sendNotification(payload) {
       },
       body: JSON.stringify({
         app_id: appId.trim(),
-        target_channel: 'push',
         ...payload,
       }),
     });
@@ -37,7 +36,7 @@ async function sendNotification(payload) {
     if (!res.ok) {
       console.error('[OneSignal] API error response:', JSON.stringify(data));
     } else {
-      console.log(`[OneSignal] Push notification sent successfully! ✅ id=${data.id} recipients=${data.recipients}`);
+      console.log(`[OneSignal] Push sent ✅ id=${data.id} recipients=${data.recipients}`);
     }
     return data;
   } catch (err) {
@@ -47,14 +46,11 @@ async function sendNotification(payload) {
   }
 }
 
-// ── Send push to ALL admin-tagged devices & Subscribed Users ──────────────────
+// ── Send push to ALL admin-tagged devices ─────────────────────────────────────
+// OneSignal does NOT allow mixing filters + included_segments in one call.
+// So we send TWO separate calls: one by tag filter, one to all subscribed (fallback)
 export async function notifyAdmins({ title, body, url = `${SITE_URL}/admin` }) {
-  // Try sending to role: admin tag first, fallback to Subscribed Users segment so admins never miss orders
-  return sendNotification({
-    filters: [
-      { field: 'tag', key: 'role', relation: '=', value: 'admin' },
-    ],
-    included_segments: ['Subscribed Users'], // Target all subscribed admin/user devices so no order is missed!
+  const common = {
     headings: { en: title },
     contents: { en: body },
     url,
@@ -62,35 +58,53 @@ export async function notifyAdmins({ title, body, url = `${SITE_URL}/admin` }) {
     firefox_icon: ICON_URL,
     chrome_web_badge: ICON_URL,
     priority: 10,
+  };
+
+  // Primary: target devices tagged as admin
+  const adminTagResult = await sendNotification({
+    filters: [
+      { field: 'tag', key: 'role', relation: '=', value: 'admin' },
+    ],
+    ...common,
   });
+
+  // If admin-tag returned 0 recipients (no one has subscribed & tagged yet),
+  // fall back to ALL Subscribed Users so no new order is ever missed
+  if (!adminTagResult || (adminTagResult.recipients !== undefined && adminTagResult.recipients === 0)) {
+    console.log('[OneSignal] No admin-tagged subscribers yet — broadcasting to all Subscribed Users as fallback');
+    return sendNotification({
+      included_segments: ['Subscribed Users'],
+      ...common,
+    });
+  }
+
+  return adminTagResult;
 }
 
 // ── Send push to a specific customer by Firebase UID ─────────────────────────
 export async function notifyUser({ userId, title, body, url = `${SITE_URL}/track` }) {
-  if (!userId) {
-    console.warn('[OneSignal] notifyUser called without userId — targeting All Subscribed Users');
-    return sendNotification({
-      included_segments: ['Subscribed Users'],
-      headings: { en: title },
-      contents: { en: body },
-      url,
-      chrome_web_icon: ICON_URL,
-      firefox_icon: ICON_URL,
-      priority: 10,
-    });
-  }
-
-  return sendNotification({
-    include_aliases: {
-      external_id: [userId],
-    },
-    include_external_user_ids: [userId], // backward compatibility
+  const common = {
     headings: { en: title },
     contents: { en: body },
     url,
     chrome_web_icon: ICON_URL,
     firefox_icon: ICON_URL,
     priority: 10,
+  };
+
+  if (!userId) {
+    console.warn('[OneSignal] notifyUser called without userId — broadcasting to Subscribed Users');
+    return sendNotification({
+      included_segments: ['Subscribed Users'],
+      ...common,
+    });
+  }
+
+  // Use external_id (Firebase UID) to target this specific user's devices
+  return sendNotification({
+    include_aliases: { external_id: [userId] },
+    target_channel: 'push',
+    ...common,
   });
 }
 
