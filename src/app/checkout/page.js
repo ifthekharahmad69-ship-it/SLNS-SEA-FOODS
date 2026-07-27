@@ -13,7 +13,7 @@ const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || '7995177216@ybl';
 const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Amma Sea Foods';
 
 export default function CheckoutPage() {
-  const { items, subtotal, savings, delivery, total, clearCart } = useCart();
+  const { items, subtotal, savings, delivery, total, clearCart, updateQty, removeItem } = useCart();
   const { user, loading } = useAuth();
   const { t } = useLanguage();
   const [showAuth, setShowAuth] = useState(false);
@@ -395,9 +395,43 @@ export default function CheckoutPage() {
                         </span>
                       )}
                     </div>
-                    <p className="co-item-qty">Qty: {item.qty} × ₹{item.price}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.35rem' }}>
+                      <div className="qty-control" style={{ transform: 'scale(0.88)', transformOrigin: 'left center' }}>
+                        <button
+                          type="button"
+                          className="qty-btn"
+                          onClick={() => updateQty(item.id, +(item.qty - 0.5).toFixed(1))}
+                          aria-label="Decrease quantity"
+                        >−</button>
+                        <span className="qty-value">
+                          {(() => {
+                            const q = item.qty;
+                            const w = Math.floor(q);
+                            const h = (q % 1) >= 0.4;
+                            if (w === 0 && h) return '½ kg';
+                            if (w > 0 && h) return `${w}½ kg`;
+                            return `${w} kg`;
+                          })()}
+                        </span>
+                        <button
+                          type="button"
+                          className="qty-btn"
+                          onClick={() => updateQty(item.id, +(item.qty + 0.5).toFixed(1))}
+                          disabled={isItemOutOfStock}
+                          aria-label="Increase quantity"
+                        >+</button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}
+                        title="Remove item"
+                      >
+                        🗑️ Remove
+                      </button>
+                    </div>
                   </div>
-                  <span className="co-item-price">₹{item.price * item.qty}</span>
+                  <span className="co-item-price">₹{(item.price * item.qty).toLocaleString()}</span>
                 </div>
               );
             })}
