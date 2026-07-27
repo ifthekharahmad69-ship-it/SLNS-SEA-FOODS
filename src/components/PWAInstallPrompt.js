@@ -113,7 +113,7 @@ export default function PWAInstallPrompt() {
           50% { box-shadow: 0 4px 28px rgba(15,76,117,0.85), 0 0 0 8px rgba(15,76,117,0.15); }
         }
         @keyframes pwaToastIn {
-          from { opacity: 0; transform: translateX(30px); }
+          from { opacity: 0; transform: translateX(-30px); }
           to   { opacity: 1; transform: translateX(0); }
         }
         @keyframes pwaIOSSlide {
@@ -122,7 +122,7 @@ export default function PWAInstallPrompt() {
         }
       `}</style>
 
-      {/* ── Floating download icon ─────────────────────────────────── */}
+      {/* ── Floating download icon ─────────────────────────── */}
       <button
         onClick={handleInstall}
         id="pwa-float-btn"
@@ -130,7 +130,7 @@ export default function PWAInstallPrompt() {
         style={{
           position: 'fixed',
           bottom: '90px',
-          right: '16px',
+          left: '16px',
           zIndex: 8800,
           width: 48,
           height: 48,
@@ -150,14 +150,14 @@ export default function PWAInstallPrompt() {
         ⬇
       </button>
 
-      {/* ── Toast nudge (every 60 s) ───────────────────────────────── */}
+      {/* ── Toast nudge (every 60 s) ─────────────────────── */}
       {showToast && (
         <div
           id="pwa-toast"
           style={{
             position: 'fixed',
             bottom: '150px',
-            right: '16px',
+            left: '16px',
             zIndex: 8900,
             background: 'linear-gradient(135deg, #0f4c75, #1a7abf)',
             color: 'white',
@@ -168,9 +168,9 @@ export default function PWAInstallPrompt() {
             animation: 'pwaToastIn 0.35s ease-out',
           }}
         >
-          {/* Arrow pointing to the button */}
+          {/* Arrow pointing DOWN to the button below on the left */}
           <div style={{
-            position: 'absolute', bottom: -8, right: 20,
+            position: 'absolute', bottom: -8, left: 20,
             width: 0, height: 0,
             borderLeft: '8px solid transparent',
             borderRight: '8px solid transparent',
