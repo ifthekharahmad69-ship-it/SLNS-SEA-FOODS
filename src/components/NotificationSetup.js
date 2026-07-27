@@ -1,9 +1,10 @@
 'use client';
 
 // NotificationSetup.js
-// Shows a beautiful permission banner automatically on every page visit.
-// Uses native Notification API directly — works without any env vars.
-// Also initializes OneSignal if NEXT_PUBLIC_ONESIGNAL_APP_ID is set.
+// Integrates OneSignal Web Push Notifications:
+// 1. Initializes OneSignal Web SDK on page load
+// 2. Shows custom bottom permission banner if not yet subscribed
+// 3. Subscribes browser push token & links logged-in Firebase UIDs + admin tags
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -14,99 +15,109 @@ const ADMIN_EMAILS = [
   'ifthekharahmad69@gmail.com',
 ];
 
-let oneSignalInitialized = false;
+let oneSignalPromise = null;
+
+async function getOneSignal() {
+  if (typeof window === 'undefined') return null;
+  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '85ff10cd-305a-4954-a4ed-4f40a5cc2517';
+  if (!appId) return null;
+
+  if (!oneSignalPromise) {
+    oneSignalPromise = (async () => {
+      try {
+        const OneSignal = (await import('react-onesignal')).default;
+        await OneSignal.init({
+          appId,
+          serviceWorkerPath: '/OneSignalSDKWorker.js',
+          allowLocalhostAsSecureOrigin: true,
+        });
+        console.log('[OneSignal] SDK Initialized ✅');
+        return OneSignal;
+      } catch (err) {
+        console.error('[OneSignal] SDK Init error:', err);
+        return null;
+      }
+    })();
+  }
+  return oneSignalPromise;
+}
 
 export default function NotificationSetup() {
   const { user } = useAuth();
   const [showBanner, setShowBanner] = useState(false);
-  const [permStatus, setPermStatus] = useState('default'); // 'default' | 'granted' | 'denied'
+  const [permissionGranted, setPermissionGranted] = useState(true);
 
-  // ── Check permission & show banner ──────────────────────────────────────────
+  // ── Step 1: Init OneSignal on page load & check subscription state ────────────
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!('Notification' in window)) return;
+    let mounted = true;
+    const checkState = async () => {
+      const OneSignal = await getOneSignal();
+      if (!OneSignal || !mounted) return;
 
-    const perm = Notification.permission;
-    setPermStatus(perm);
+      const isGranted = OneSignal.Notifications?.permission === true || Notification?.permission === 'granted';
+      setPermissionGranted(isGranted);
 
-    // If already granted → init OneSignal silently, no banner needed
-    if (perm === 'granted') {
-      initOneSignal();
-      return;
-    }
-
-    // If denied → don't annoy the user
-    if (perm === 'denied') return;
-
-    // Default → show our custom banner after 2 seconds
-    const timer = setTimeout(() => setShowBanner(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // ── Initialize OneSignal (silent, background) ────────────────────────────────
-  const initOneSignal = async () => {
-    const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
-    if (!appId || oneSignalInitialized) return;
-    try {
-      const OneSignal = (await import('react-onesignal')).default;
-      oneSignalInitialized = true;
-      await OneSignal.init({
-        appId,
-        serviceWorkerPath: '/OneSignalSDKWorker.js',
-        allowLocalhostAsSecureOrigin: true,
-      });
-      console.log('[OneSignal] Initialized ✅');
-    } catch (err) {
-      console.warn('[OneSignal] Init error:', err.message);
-    }
-  };
-
-  // ── Tag user in OneSignal after login ────────────────────────────────────────
-  useEffect(() => {
-    if (!user || typeof window === 'undefined') return;
-    if (Notification.permission !== 'granted') return;
-
-    const tag = async () => {
-      const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
-      if (!appId) return;
-      try {
-        const OneSignal = (await import('react-onesignal')).default;
-        await OneSignal.login(user.uid);
-        const role = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'customer';
-        await OneSignal.User.addTag('role', role);
-        console.log(`[OneSignal] Tagged as ${role} ✅`);
-      } catch (err) {
-        console.warn('[OneSignal] Tag error:', err.message);
+      if (!isGranted && Notification?.permission !== 'denied') {
+        setTimeout(() => {
+          if (mounted) setShowBanner(true);
+        }, 2000);
       }
     };
-    tag();
+
+    checkState();
+    return () => { mounted = false; };
+  }, []);
+
+  // ── Step 2: Sync logged in user UID and admin role tags ─────────────────────
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return;
+
+    const syncUser = async () => {
+      const OneSignal = await getOneSignal();
+      if (!OneSignal) return;
+
+      try {
+        await OneSignal.login(user.uid);
+        const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
+        const role = isAdmin ? 'admin' : 'customer';
+        await OneSignal.User.addTag('role', role);
+        console.log(`[OneSignal] User ${user.uid} tagged as ${role} ✅`);
+      } catch (err) {
+        console.error('[OneSignal] Sync user error:', err);
+      }
+    };
+
+    syncUser();
   }, [user]);
 
-  // ── Handle "Allow" button click ──────────────────────────────────────────────
+  // ── Step 3: Trigger OneSignal Push Permission Request on button tap ─────────
   const handleAllow = async () => {
     setShowBanner(false);
     try {
-      // Direct native browser permission request — always works
-      const result = await Notification.requestPermission();
-      setPermStatus(result);
-      if (result === 'granted') {
-        console.log('[Notifications] Permission granted ✅');
-        await initOneSignal();
+      const OneSignal = await getOneSignal();
+      if (OneSignal?.Notifications?.requestPermission) {
+        await OneSignal.Notifications.requestPermission();
+      } else {
+        await Notification.requestPermission();
+      }
+
+      const isGranted = Notification?.permission === 'granted';
+      setPermissionGranted(isGranted);
+
+      if (isGranted && user) {
+        const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
+        await OneSignal?.User?.addTag?.('role', isAdmin ? 'admin' : 'customer');
       }
     } catch (err) {
-      console.warn('[Notifications] Request failed:', err.message);
+      console.error('[OneSignal] Allow permission error:', err);
     }
   };
 
   const handleDismiss = () => {
     setShowBanner(false);
-    // Re-show after 5 minutes if still not decided
-    setTimeout(() => {
-      if (Notification.permission === 'default') setShowBanner(true);
-    }, 5 * 60 * 1000);
   };
 
-  if (!showBanner || permStatus === 'granted' || permStatus === 'denied') return null;
+  if (permissionGranted || !showBanner) return null;
 
   return (
     <>
@@ -125,12 +136,12 @@ export default function NotificationSetup() {
         }
       `}</style>
 
-      {/* Full-width banner at BOTTOM of screen — unmissable */}
+      {/* Full-width notification banner at bottom */}
       <div
         id="notification-permission-banner"
         style={{
           position: 'fixed',
-          bottom: 70,           // above mobile bottom nav
+          bottom: 70,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 'calc(100% - 24px)',
@@ -147,7 +158,6 @@ export default function NotificationSetup() {
           gap: 12,
         }}
       >
-        {/* Bell icon */}
         <div style={{
           width: 46, height: 46, borderRadius: '50%',
           background: 'rgba(255,255,255,0.15)',
@@ -158,23 +168,15 @@ export default function NotificationSetup() {
           🔔
         </div>
 
-        {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{
-            color: '#fff', fontWeight: 700, fontSize: '0.88rem',
-            margin: '0 0 2px', lineHeight: 1.3,
-          }}>
+          <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.88rem', margin: '0 0 2px', lineHeight: 1.3 }}>
             Get Order Alerts Instantly!
           </p>
-          <p style={{
-            color: 'rgba(255,255,255,0.75)', fontSize: '0.74rem',
-            margin: 0, lineHeight: 1.4,
-          }}>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.74rem', margin: 0, lineHeight: 1.4 }}>
             Know when your order is confirmed, out for delivery & delivered 📦
           </p>
         </div>
 
-        {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
           <button
             onClick={handleAllow}
