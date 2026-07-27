@@ -41,7 +41,8 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="SLNS Fresh" />
-        <link rel="apple-touch-icon" href="/icons/customer-192.png" />
+        {/* OneSignal Web Push SDK */}
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
         {/* Register Service Worker */}
         <script
           dangerouslySetInnerHTML={{
