@@ -93,13 +93,13 @@ export async function PATCH(request, { params }) {
         if (orderData?.userId && orderData?.orderId) {
           const notif = getStatusNotification(status, orderData.orderId);
           if (notif) {
-            // Fire and forget — don't delay the admin panel response
-            notifyUser({
+            // Await notification so Vercel Serverless Lambda does not terminate early
+            await notifyUser({
               userId: orderData.userId,
               title: notif.title,
               body: notif.body,
               url: 'https://slns-sea-foods.vercel.app/track',
-            }).catch((err) => console.error('[OneSignal] Customer notify failed:', err));
+            });
           }
         }
       } catch (notifErr) {

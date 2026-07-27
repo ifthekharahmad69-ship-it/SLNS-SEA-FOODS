@@ -65,12 +65,15 @@ export async function POST(request) {
     console.log(`✅ New order created: ${orderId} (doc: ${docRef.id})`);
 
     // ── 🔔 Push notification to all admins ───────────────────────────────────
-    // Fire and forget — don't await so order response is instant
-    notifyAdmins({
-      title: `🛒 New Order! ${orderId}`,
-      body: `₹${Number(total).toLocaleString('en-IN')} from ${name.trim()} · ${payment?.toUpperCase() || 'COD'}`,
-      url: 'https://slns-sea-foods.vercel.app/admin',
-    }).catch((err) => console.error('[OneSignal] Admin notify failed:', err));
+    try {
+      await notifyAdmins({
+        title: `🛒 New Order! ${orderId}`,
+        body: `₹${Number(total).toLocaleString('en-IN')} from ${name.trim()} · ${payment?.toUpperCase() || 'COD'}`,
+        url: 'https://slns-sea-foods.vercel.app/admin',
+      });
+    } catch (err) {
+      console.error('[OneSignal] Admin notify failed:', err);
+    }
 
     return NextResponse.json({ success: true, orderId, docId: docRef.id }, { status: 201 });
   } catch (error) {
