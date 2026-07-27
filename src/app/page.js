@@ -64,8 +64,8 @@ export default function HomePage() {
     () => products.filter((p) => p.isFeatured).slice(0, 8),
     [products]
   );
-  const rawFish = useMemo(
-    () => products.filter((p) => p.category === 'fish' && p.type === 'raw').slice(0, 4),
+  const pickles = useMemo(
+    () => products.filter((p) => p.category === 'pickles'),
     [products]
   );
 
@@ -133,6 +133,31 @@ export default function HomePage() {
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Non-Veg Pickles Showcase Section */}
+      <section className="section" id="pickles-section" style={{ background: '#fff7ed', borderTop: '1.5px solid #fed7aa', borderBottom: '1.5px solid #fed7aa' }}>
+        <div className="container">
+          <div className="section-header">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: '#ffedd5', borderRadius: '20px', color: '#c2410c', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+              🌶️ Authentic Andhra Homestyle
+            </div>
+            <h2 className="section-title" style={{ color: '#9a3412' }}>🫙 Non-Veg Pickles</h2>
+            <p className="section-subtitle" style={{ color: '#c2410c' }}>Handcrafted with premium chicken & prawns, freshly ground spices, and zero preservatives</p>
+          </div>
+
+          <div className="products-grid">
+            {pickles.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+            <Link href="/shop/pickles" className="btn btn-lg" style={{ background: '#ea580c', color: '#ffffff', fontWeight: 700, borderRadius: '12px' }}>
+              Explore All Pickles 🫙
             </Link>
           </div>
         </div>
