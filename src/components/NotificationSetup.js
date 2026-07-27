@@ -35,8 +35,6 @@ export default function NotificationSetup() {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
-          serviceWorkerPath: '/sw.js',
-          serviceWorkerParam: { scope: '/' },
           notifyButton: { enable: false },
         });
 
