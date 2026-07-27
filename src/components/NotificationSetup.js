@@ -1,10 +1,8 @@
 'use client';
 
 // NotificationSetup.js
-// Integrates OneSignal Web Push Notifications:
-// 1. Initializes OneSignal Web SDK on page load
-// 2. Explicitly opts in push subscription so Audience increases in OneSignal dashboard
-// 3. Links logged-in Firebase UIDs + admin role tags
+// Native OneSignal Web SDK v16 Integration for Next.js App Router.
+// Uses window.OneSignalDeferred directly (the official canonical OneSignal v16 pattern).
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -15,114 +13,75 @@ const ADMIN_EMAILS = [
   'ifthekharahmad69@gmail.com',
 ];
 
-let oneSignalPromise = null;
-
-async function getOneSignal() {
-  if (typeof window === 'undefined') return null;
-  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '85ff10cd-305a-4954-a4ed-4f40a5cc2517';
-  if (!appId) return null;
-
-  if (!oneSignalPromise) {
-    oneSignalPromise = (async () => {
-      try {
-        const OneSignal = (await import('react-onesignal')).default;
-        await OneSignal.init({
-          appId,
-          allowLocalhostAsSecureOrigin: true,
-        });
-        console.log('[OneSignal] SDK Initialized ✅');
-        return OneSignal;
-      } catch (err) {
-        console.error('[OneSignal] SDK Init error:', err);
-        return null;
-      }
-    })();
-  }
-  return oneSignalPromise;
-}
+const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '85ff10cd-305a-4954-a4ed-4f40a5cc2517';
 
 export default function NotificationSetup() {
   const { user } = useAuth();
   const [showBanner, setShowBanner] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(true);
 
-  // ── Step 1: Init OneSignal & auto opt-in if permission is already granted ──
+  // ── Step 1: Initialize OneSignal v16 via OneSignalDeferred ──────────────────
   useEffect(() => {
-    let mounted = true;
-    const checkState = async () => {
-      const OneSignal = await getOneSignal();
-      if (!OneSignal || !mounted) return;
+    if (typeof window === 'undefined') return;
 
-      const isGranted = Notification?.permission === 'granted';
-      setPermissionGranted(isGranted);
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal) {
+      try {
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          allowLocalhostAsSecureOrigin: true,
+        });
 
-      if (isGranted) {
-        // Force subscription opt-in in OneSignal dashboard
-        try {
-          if (OneSignal.User?.PushSubscription?.optIn) {
-            await OneSignal.User.PushSubscription.optIn();
-          } else if (OneSignal.Notifications?.requestPermission) {
-            await OneSignal.Notifications.requestPermission();
-          }
-          console.log('[OneSignal] Device push subscription registered ✅');
-        } catch (e) {
-          console.warn('[OneSignal] OptIn error:', e);
+        console.log('[OneSignal v16] SDK Initialized ✅');
+
+        const isGranted = Notification?.permission === 'granted';
+        setPermissionGranted(isGranted);
+
+        if (!isGranted && Notification?.permission !== 'denied') {
+          setTimeout(() => setShowBanner(true), 1500);
         }
-      } else if (Notification?.permission !== 'denied') {
-        setTimeout(() => {
-          if (mounted) setShowBanner(true);
-        }, 1500);
+      } catch (err) {
+        console.error('[OneSignal v16] Init error:', err);
       }
-    };
-
-    checkState();
-    return () => { mounted = false; };
+    });
   }, []);
 
-  // ── Step 2: Sync logged in user UID and admin role tags ─────────────────────
+  // ── Step 2: Tag logged in Firebase users and admin roles ────────────────────
   useEffect(() => {
     if (!user || typeof window === 'undefined') return;
 
-    const syncUser = async () => {
-      const OneSignal = await getOneSignal();
-      if (!OneSignal) return;
-
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal) {
       try {
         await OneSignal.login(user.uid);
         const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
         const role = isAdmin ? 'admin' : 'customer';
         await OneSignal.User.addTag('role', role);
-        console.log(`[OneSignal] User ${user.uid} tagged as ${role} ✅`);
+        console.log(`[OneSignal v16] User ${user.uid} tagged as ${role} ✅`);
       } catch (err) {
-        console.error('[OneSignal] Sync user error:', err);
+        console.error('[OneSignal v16] Tag error:', err);
       }
-    };
-
-    syncUser();
+    });
   }, [user]);
 
-  // ── Step 3: Trigger OneSignal Push Permission Request on button tap ─────────
-  const handleAllow = async () => {
+  // ── Step 3: Trigger push prompt when tapping Allow ──────────────────────────
+  const handleAllow = () => {
     setShowBanner(false);
-    try {
-      const OneSignal = await getOneSignal();
-      if (OneSignal?.Notifications?.requestPermission) {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal) {
+      try {
         await OneSignal.Notifications.requestPermission();
-      }
-      if (OneSignal?.User?.PushSubscription?.optIn) {
-        await OneSignal.User.PushSubscription.optIn();
-      }
+        const isGranted = Notification?.permission === 'granted';
+        setPermissionGranted(isGranted);
 
-      const isGranted = Notification?.permission === 'granted';
-      setPermissionGranted(isGranted);
-
-      if (isGranted && user) {
-        const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
-        await OneSignal?.User?.addTag?.('role', isAdmin ? 'admin' : 'customer');
+        if (isGranted && user) {
+          const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase?.()?.trim?.());
+          await OneSignal.User.addTag('role', isAdmin ? 'admin' : 'customer');
+        }
+      } catch (err) {
+        console.error('[OneSignal v16] Permission error:', err);
       }
-    } catch (err) {
-      console.error('[OneSignal] Allow permission error:', err);
-    }
+    });
   };
 
   const handleDismiss = () => {
