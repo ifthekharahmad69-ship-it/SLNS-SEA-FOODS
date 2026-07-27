@@ -1,7 +1,9 @@
 'use client';
 
 // NotificationSetup.js
-// Synchronous User Gesture Permission Handler + OneSignal v16 Registration
+// Integrates OneSignal Web Push Notifications:
+// - If browser permission is already granted → silently opts in device push subscription
+// - If browser permission is default → smoothly shows permission banner without flicker
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -16,15 +18,21 @@ const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '85ff10cd-3
 
 export default function NotificationSetup() {
   const { user } = useAuth();
-  const [showBanner, setShowBanner] = useState(true);
+  const [showBanner, setShowBanner] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
 
   // ── Step 1: Initialize OneSignal SDK on mount ────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const isAlreadyGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
-    setPermissionGranted(isAlreadyGranted);
+    // Check existing browser permission
+    const isGrantedOnMount = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    setPermissionGranted(isGrantedOnMount);
+
+    // Only show banner if NOT granted and NOT denied
+    if (!isGrantedOnMount && typeof Notification !== 'undefined' && Notification.permission !== 'denied') {
+      setShowBanner(true);
+    }
 
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async function (OneSignal) {
@@ -36,18 +44,21 @@ export default function NotificationSetup() {
 
         console.log('[OneSignal v16] SDK Initialized ✅');
 
-        const isGranted = Notification?.permission === 'granted';
+        const currentPerm = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+        const isGranted = currentPerm === 'granted';
         setPermissionGranted(isGranted);
 
         if (isGranted) {
+          setShowBanner(false);
           try {
             if (OneSignal.User?.PushSubscription?.optIn) {
               await OneSignal.User.PushSubscription.optIn();
             }
+            console.log('[OneSignal] OptIn success for granted device ✅');
           } catch (e) {
             console.warn('[OneSignal] OptIn error:', e);
           }
-        } else if (Notification?.permission !== 'denied') {
+        } else if (currentPerm !== 'denied') {
           setShowBanner(true);
         }
       } catch (err) {
@@ -76,7 +87,6 @@ export default function NotificationSetup() {
 
   // ── Step 3: Direct User Gesture Permission Trigger ──────────────────────────
   const handleAllow = async () => {
-    // 1. Immediately call browser native requestPermission in direct response to click
     let result = 'default';
     try {
       if (typeof Notification !== 'undefined') {
@@ -90,7 +100,6 @@ export default function NotificationSetup() {
     setPermissionGranted(isGranted);
     if (isGranted) setShowBanner(false);
 
-    // 2. Register push token & tags with OneSignal SDK
     if (typeof window !== 'undefined') {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function (OneSignal) {
