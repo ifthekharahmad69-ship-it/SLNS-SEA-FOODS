@@ -10,7 +10,7 @@ const ICON_URL = `${SITE_URL}/icons/customer-192.png`;
 
 async function sendNotification(payload) {
   if (!APP_ID || !REST_KEY) {
-    console.warn('[OneSignal] Missing APP_ID or REST_KEY — skipping push');
+    console.warn('[OneSignal] Missing APP_ID or REST_KEY in environment variables — skipping push');
     return;
   }
 
@@ -22,14 +22,18 @@ async function sendNotification(payload) {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ app_id: APP_ID, ...payload }),
+      body: JSON.stringify({
+        app_id: APP_ID,
+        target_channel: 'push',
+        ...payload,
+      }),
     });
 
     const data = await res.json();
     if (!res.ok) {
-      console.error('[OneSignal] API error:', JSON.stringify(data));
+      console.error('[OneSignal] API error response:', JSON.stringify(data));
     } else {
-      console.log(`[OneSignal] Push sent ✅ id=${data.id} recipients=${data.recipients}`);
+      console.log(`[OneSignal] Push notification sent successfully ✅ id=${data.id} recipients=${data.recipients}`);
     }
     return data;
   } catch (err) {
@@ -39,7 +43,6 @@ async function sendNotification(payload) {
 }
 
 // ── Send push to ALL admin-tagged devices ─────────────────────────────────────
-// Admin devices are tagged with { role: 'admin' } by NotificationSetup.js
 export async function notifyAdmins({ title, body, url = `${SITE_URL}/admin` }) {
   return sendNotification({
     filters: [
@@ -50,26 +53,28 @@ export async function notifyAdmins({ title, body, url = `${SITE_URL}/admin` }) {
     url,
     chrome_web_icon: ICON_URL,
     firefox_icon: ICON_URL,
-    // Play a sound on desktop
     chrome_web_badge: ICON_URL,
+    priority: 10,
   });
 }
 
 // ── Send push to a specific customer by Firebase UID ─────────────────────────
-// Customer UID is set as OneSignal externalId via NotificationSetup.js → OneSignal.login(uid)
 export async function notifyUser({ userId, title, body, url = `${SITE_URL}/track` }) {
   if (!userId) {
     console.warn('[OneSignal] notifyUser called without userId — skipping');
     return;
   }
   return sendNotification({
-    include_external_user_ids: [userId],
-    channel_for_external_user_ids: 'push',
+    include_aliases: {
+      external_id: [userId],
+    },
+    include_external_user_ids: [userId], // backward compatibility
     headings: { en: title },
     contents: { en: body },
     url,
     chrome_web_icon: ICON_URL,
     firefox_icon: ICON_URL,
+    priority: 10,
   });
 }
 
