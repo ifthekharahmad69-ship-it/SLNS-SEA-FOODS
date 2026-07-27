@@ -162,6 +162,50 @@ export default function CartPage() {
           <div className="cart-summary">
             <h3>Order Summary</h3>
 
+            {/* Quick item list with + / - steppers inside summary */}
+            <div style={{ marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              {items.map((item) => {
+                const isItemOutOfStock = item.inStock === false;
+                return (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', gap: '0.5rem' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        ₹{item.price}/kg
+                      </div>
+                    </div>
+                    <div className="qty-control" style={{ transform: 'scale(0.85)', transformOrigin: 'right center' }}>
+                      <button
+                        type="button"
+                        className="qty-btn"
+                        onClick={() => updateQty(item.id, +(item.qty - 0.5).toFixed(1))}
+                        aria-label="Decrease quantity"
+                      >−</button>
+                      <span className="qty-value">
+                        {(() => {
+                          const q = item.qty;
+                          const w = Math.floor(q);
+                          const h = (q % 1) >= 0.4;
+                          if (w === 0 && h) return '½ kg';
+                          if (w > 0 && h) return `${w}½ kg`;
+                          return `${w} kg`;
+                        })()}
+                      </span>
+                      <button
+                        type="button"
+                        className="qty-btn"
+                        onClick={() => updateQty(item.id, +(item.qty + 0.5).toFixed(1))}
+                        disabled={isItemOutOfStock}
+                        aria-label="Increase quantity"
+                      >+</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="summary-row">
               <span>{t('cart.subtotal')} ({itemCount} {t('cart.items')})</span>
               <span className="value">₹{subtotal.toLocaleString()}</span>

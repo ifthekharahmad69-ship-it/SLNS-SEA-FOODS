@@ -1603,7 +1603,7 @@ ul, ol {
   margin-bottom: var(--space-xl);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .cart-layout { grid-template-columns: 1fr; }
   .cart-summary { position: static; }
 }
