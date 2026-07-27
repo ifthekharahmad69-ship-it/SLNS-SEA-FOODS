@@ -3,8 +3,8 @@
 // NotificationSetup.js
 // Integrates OneSignal Web Push Notifications:
 // 1. Initializes OneSignal Web SDK on page load
-// 2. Shows custom bottom permission banner if not yet subscribed
-// 3. Subscribes browser push token & links logged-in Firebase UIDs + admin tags
+// 2. Explicitly opts in push subscription so Audience increases in OneSignal dashboard
+// 3. Links logged-in Firebase UIDs + admin role tags
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -28,7 +28,6 @@ async function getOneSignal() {
         const OneSignal = (await import('react-onesignal')).default;
         await OneSignal.init({
           appId,
-          serviceWorkerPath: '/OneSignalSDKWorker.js',
           allowLocalhostAsSecureOrigin: true,
         });
         console.log('[OneSignal] SDK Initialized ✅');
@@ -47,20 +46,32 @@ export default function NotificationSetup() {
   const [showBanner, setShowBanner] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(true);
 
-  // ── Step 1: Init OneSignal on page load & check subscription state ────────────
+  // ── Step 1: Init OneSignal & auto opt-in if permission is already granted ──
   useEffect(() => {
     let mounted = true;
     const checkState = async () => {
       const OneSignal = await getOneSignal();
       if (!OneSignal || !mounted) return;
 
-      const isGranted = OneSignal.Notifications?.permission === true || Notification?.permission === 'granted';
+      const isGranted = Notification?.permission === 'granted';
       setPermissionGranted(isGranted);
 
-      if (!isGranted && Notification?.permission !== 'denied') {
+      if (isGranted) {
+        // Force subscription opt-in in OneSignal dashboard
+        try {
+          if (OneSignal.User?.PushSubscription?.optIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          } else if (OneSignal.Notifications?.requestPermission) {
+            await OneSignal.Notifications.requestPermission();
+          }
+          console.log('[OneSignal] Device push subscription registered ✅');
+        } catch (e) {
+          console.warn('[OneSignal] OptIn error:', e);
+        }
+      } else if (Notification?.permission !== 'denied') {
         setTimeout(() => {
           if (mounted) setShowBanner(true);
-        }, 2000);
+        }, 1500);
       }
     };
 
@@ -97,8 +108,9 @@ export default function NotificationSetup() {
       const OneSignal = await getOneSignal();
       if (OneSignal?.Notifications?.requestPermission) {
         await OneSignal.Notifications.requestPermission();
-      } else {
-        await Notification.requestPermission();
+      }
+      if (OneSignal?.User?.PushSubscription?.optIn) {
+        await OneSignal.User.PushSubscription.optIn();
       }
 
       const isGranted = Notification?.permission === 'granted';
