@@ -106,12 +106,33 @@ export default function AdminPage() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [pwaPrompt, setPwaPrompt] = useState(null);   // admin PWA install prompt
   const [pwaInstalled, setPwaInstalled] = useState(false);
+  const [testingPush, setTestingPush] = useState(false); // test push state
 
   // ── Toast Notification ────────────────────────────────────────────────────────
   const [toast, setToast] = useState(null); // { msg, type: 'success'|'error' }
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), 5000);
+  };
+
+  // ── Test Push Notification ──────────────────────────────────────────────────
+  const handleTestPush = async () => {
+    setTestingPush(true);
+    try {
+      const res = await fetch('/api/test-notification', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.recipients > 0) {
+        showToast(`✅ Test push sent to ${data.recipients} device(s)! Check your phone.`, 'success');
+      } else if (data.success && data.recipients === 0) {
+        showToast('⚠️ API works but 0 recipients — no devices subscribed yet. Click 🔔 Enable Alerts on the site first!', 'error');
+      } else {
+        showToast(`❌ Push failed: ${JSON.stringify(data.errors || data.error)}`, 'error');
+      }
+    } catch (err) {
+      showToast(`❌ Network error: ${err.message}`, 'error');
+    } finally {
+      setTestingPush(false);
+    }
   };
 
   // ── Product Management State (Real-time Firestore listener) ──────────────────
@@ -603,28 +624,55 @@ export default function AdminPage() {
                     {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </span>
                 </div>
-                <button
-                  onClick={handleAdminInstall}
-                  className="btn btn-sm"
-                  style={{
-                    background: 'linear-gradient(135deg, #0f4c75, #1a7abf)',
-                    color: '#ffffff',
-                    fontWeight: 700,
-                    borderRadius: '20px',
-                    padding: '8px 16px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '0.85rem',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(15,76,117,0.3)',
-                  }}
-                  id="admin-install-app-btn"
-                >
-                  <span>📥</span>
-                  <span>{pwaInstalled ? 'Admin App Installed ✓' : 'Install Admin App'}</span>
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    onClick={handleTestPush}
+                    disabled={testingPush}
+                    className="btn btn-sm"
+                    style={{
+                      background: 'linear-gradient(135deg, #059669, #10b981)',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      border: 'none',
+                      cursor: testingPush ? 'wait' : 'pointer',
+                      boxShadow: '0 4px 14px rgba(16,185,129,0.3)',
+                      opacity: testingPush ? 0.7 : 1,
+                    }}
+                    id="admin-test-push-btn"
+                  >
+                    <span>🔔</span>
+                    <span>{testingPush ? 'Sending Test...' : 'Test Push Notification'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleAdminInstall}
+                    className="btn btn-sm"
+                    style={{
+                      background: 'linear-gradient(135deg, #0f4c75, #1a7abf)',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(15,76,117,0.3)',
+                    }}
+                    id="admin-install-app-btn"
+                  >
+                    <span>📥</span>
+                    <span>{pwaInstalled ? 'Admin App Installed ✓' : 'Install Admin App'}</span>
+                  </button>
+                </div>
               </div>
 
               <div className="stats-grid">
