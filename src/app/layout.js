@@ -1,5 +1,6 @@
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
+import Script from 'next/script';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -41,10 +42,17 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="SLNS Fresh" />
-        {/* OneSignal Web Push SDK */}
-        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
+      </head>
+      <body>
+        {/* OneSignal Web Push SDK loaded properly via next/script */}
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+        />
         {/* Register Service Worker */}
-        <script
+        <Script
+          id="register-sw"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
@@ -57,8 +65,7 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-      </head>
-      <body>
+
         <LanguageProvider>
           <AuthProvider>
             <CartProvider>
