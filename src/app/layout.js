@@ -16,21 +16,59 @@ export const viewport = {
   themeColor: '#0f4c75',
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slns-sea-foods.vercel.app';
+
 export const metadata = {
-  title: 'SLNS Fresh Sea Foods — Premium Fish, Prawns & Crabs',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'SLNS Fresh Sea Foods — Premium Fish, Prawns & Crabs',
+    template: '%s | SLNS Fresh Sea Foods',
+  },
   description:
-    'Order fresh fish, prawns, crabs, and ready-to-eat seafood dishes delivered to your door. Andhra-style seafood at its finest.',
-  keywords: 'fresh seafood, fish, prawns, crabs, seafood delivery, Andhra seafood',
+    'Order fresh fish, prawns, crabs, and ready-to-eat seafood dishes delivered to your door in Amalapuram. Andhra-style seafood at its finest.',
+  keywords: [
+    'fresh seafood',
+    'fish delivery',
+    'fresh prawns',
+    'mud crabs',
+    'seafood delivery Amalapuram',
+    'Andhra seafood',
+    'SLNS Fresh',
+    'Amma Sea Foods',
+  ],
+  alternates: {
+    canonical: '/',
+  },
   manifest: '/manifest.json',
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'SLNS Fresh',
   },
   openGraph: {
-    title: 'SLNS Fresh Sea Foods',
-    description: 'Premium fresh seafood & dishes delivered to your door.',
+    title: 'SLNS Fresh Sea Foods — Premium Seafood Delivery',
+    description: 'Order fresh fish, prawns, crabs & authentic Andhra seafood dishes delivered fast.',
+    url: siteUrl,
+    siteName: 'SLNS Fresh Sea Foods',
+    locale: 'en_IN',
     type: 'website',
+    images: [
+      {
+        url: '/images/hero-banner.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'SLNS Fresh Sea Foods',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SLNS Fresh Sea Foods',
+    description: 'Fresh fish, prawns, crabs & seafood dishes delivered to your doorstep.',
+    images: ['/images/hero-banner.jpg'],
   },
 };
 

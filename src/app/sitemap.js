@@ -5,7 +5,7 @@
 import { products } from '@/data/products';
 
 export default function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slns-sea-foods.vercel.app';
 
   const now = new Date().toISOString();
 

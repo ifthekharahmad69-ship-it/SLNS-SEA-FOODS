@@ -53,8 +53,28 @@ export default function ProductDetailPage() {
       ? [product.image]
       : ['/images/placeholder.jpg'];
 
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: images.map((img) => (img.startsWith('http') ? img : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app'}${img}`)),
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'INR',
+      availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app'}/product/${product.id}`,
+    },
+  };
+
   return (
     <div className="page-wrapper">
+      {/* Product JSON-LD for Google Rich Search Results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb" aria-label="Breadcrumb">
