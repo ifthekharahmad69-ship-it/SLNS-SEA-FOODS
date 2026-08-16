@@ -3,7 +3,7 @@
 // Called from /api/orders (new order alert to admin)
 // and /api/orders/[id] (status update alert to customer)
 
-const SITE_URL = 'https://slns-sea-foods.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in';
 const ICON_URL = `${SITE_URL}/icons/customer-192.png`;
 
 async function sendNotification(payload) {

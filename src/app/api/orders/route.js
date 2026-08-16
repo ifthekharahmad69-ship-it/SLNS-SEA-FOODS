@@ -69,7 +69,7 @@ export async function POST(request) {
       await notifyAdmins({
         title: `🛒 New Order! ${orderId}`,
         body: `₹${Number(total).toLocaleString('en-IN')} from ${name.trim()} · ${payment?.toUpperCase() || 'COD'}`,
-        url: 'https://slns-sea-foods.vercel.app/admin',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in'}/admin`,
       });
     } catch (err) {
       console.error('[OneSignal] Admin notify failed:', err);

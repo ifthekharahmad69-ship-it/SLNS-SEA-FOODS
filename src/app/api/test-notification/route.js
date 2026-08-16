@@ -28,8 +28,8 @@ export async function POST() {
         included_segments: ['Subscribed Users'],
         headings: { en: '🧪 Test Notification — SLNS Fresh' },
         contents: { en: 'Push notifications are working! ✅ You will now get order alerts.' },
-        url: 'https://slns-sea-foods.vercel.app',
-        chrome_web_icon: 'https://slns-sea-foods.vercel.app/icons/customer-192.png',
+        url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in',
+        chrome_web_icon: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in'}/icons/customer-192.png`,
         priority: 10,
       }),
     });

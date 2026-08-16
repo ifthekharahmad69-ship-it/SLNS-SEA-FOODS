@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in';
   const description = product.description
     ? product.description.slice(0, 155)
     : `Buy fresh ${product.name} online — ₹${product.price}/${product.unit.replace('per ', '')}. ${product.weight}. Delivered fresh to your door in Amalapuram & nearby.`;

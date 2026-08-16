@@ -10,17 +10,26 @@ import MapWrapper from '@/components/MapWrapper';
 import CustomerReviewsShowcase from '@/components/CustomerReviewsShowcase';
 
 
+// WebSite JSON-LD — Google shows "SLNS Sea Foods & Pickles" as the Site Name in Search Results
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'SLNS Sea Foods & Pickles',
+  alternateName: ['SLNS', 'SLNS Sea Foods', 'SLNS Pickles', 'SLNS Sea Foods and Pickles'],
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in',
+};
+
 // LocalBusiness JSON-LD — Google shows this in search results
 const localBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': ['LocalBusiness', 'FoodEstablishment'],
-  name: 'SLNS Fresh Sea Foods',
-  alternateName: 'Amma Sea Foods',
-  description: 'Fresh fish, prawns, crabs and authentic Andhra seafood dishes delivered to your door in Amalapuram.',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app',
+  name: 'SLNS Sea Foods & Pickles',
+  alternateName: ['SLNS', 'SLNS Sea Foods', 'SLNS Pickles', 'SLNS Sea Foods and Pickles', 'Amma Sea Foods'],
+  description: 'Fresh fish, prawns, crabs, non-veg pickles and authentic Andhra seafood dishes delivered to your door in Amalapuram.',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in',
   telephone: '+917995177216',
   priceRange: '₹₹',
-  servesCuisine: 'Seafood, Andhra',
+  servesCuisine: 'Seafood, Andhra Pickles',
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Amalapuram',
@@ -43,11 +52,12 @@ const localBusinessSchema = {
   ],
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
-    name: 'Fresh Seafood Products',
+    name: 'Fresh Seafood & Pickles Catalog',
     itemListElement: [
       { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Fresh Fish' } },
       { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Tiger Prawns' } },
       { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Mud Crabs' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Seafood Pickles' } },
       { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Andhra Seafood Dishes' } },
     ],
   },
@@ -71,10 +81,10 @@ export default function HomePage() {
 
   return (
     <div className="page-wrapper">
-      {/* Structured Data for Google */}
+      {/* Structured Data for Google Site Name & Local Business */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([websiteSchema, localBusinessSchema]) }}
       />
 
       {/* Hero */}

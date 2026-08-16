@@ -58,13 +58,13 @@ export default function ProductDetailPage() {
     '@type': 'Product',
     name: product.name,
     description: product.description,
-    image: images.map((img) => (img.startsWith('http') ? img : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app'}${img}`)),
+    image: images.map((img) => (img.startsWith('http') ? img : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in'}${img}`)),
     offers: {
       '@type': 'Offer',
       price: product.price,
       priceCurrency: 'INR',
       availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app'}/product/${product.id}`,
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in'}/product/${product.id}`,
     },
   };
 

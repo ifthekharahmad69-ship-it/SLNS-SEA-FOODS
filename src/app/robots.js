@@ -2,7 +2,7 @@
 // Generates robots.txt — tells Google which pages to crawl / ignore
 
 export default function robots() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slns-sea-foods.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in';
 
   return {
     rules: [

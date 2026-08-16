@@ -98,7 +98,7 @@ export async function PATCH(request, { params }) {
               userId: orderData.userId,
               title: notif.title,
               body: notif.body,
-              url: 'https://slns-sea-foods.vercel.app/track',
+              url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in'}/track`,
             });
           }
         }

@@ -16,26 +16,37 @@ export const viewport = {
   themeColor: '#0f4c75',
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slns-sea-foods.vercel.app';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in';
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'SLNS Fresh Sea Foods — Premium Fish, Prawns & Crabs',
-    template: '%s | SLNS Fresh Sea Foods',
+    default: 'SLNS Sea Foods & Pickles — Fresh Fish, Prawns, Crabs & Andhra Pickles',
+    template: '%s | SLNS Sea Foods & Pickles',
   },
   description:
-    'Order fresh fish, prawns, crabs, and ready-to-eat seafood dishes delivered to your door in Amalapuram. Andhra-style seafood at its finest.',
+    'Order fresh fish, prawns, mud crabs, non-veg pickles, and authentic Andhra seafood dishes online. Fast delivery in Amalapuram & nearby.',
   keywords: [
+    'SLNS',
+    'SLNS Sea Foods',
+    'SLNS Sea Foods and Pickles',
+    'SLNS Pickles',
     'fresh seafood',
     'fish delivery',
     'fresh prawns',
     'mud crabs',
+    'seafood pickles',
+    'prawn pickle',
+    'fish pickle',
     'seafood delivery Amalapuram',
     'Andhra seafood',
     'SLNS Fresh',
     'Amma Sea Foods',
   ],
+  icons: {
+    icon: '/icons/customer-192.png',
+    apple: '/icons/customer-192.png',
+  },
   alternates: {
     canonical: '/',
   },
@@ -49,10 +60,10 @@ export const metadata = {
     title: 'SLNS Fresh',
   },
   openGraph: {
-    title: 'SLNS Fresh Sea Foods — Premium Seafood Delivery',
-    description: 'Order fresh fish, prawns, crabs & authentic Andhra seafood dishes delivered fast.',
+    title: 'SLNS Sea Foods & Pickles — Fresh Seafood & Pickles Delivery',
+    description: 'Order fresh fish, prawns, crabs, non-veg pickles & authentic Andhra seafood dishes delivered fast in Amalapuram.',
     url: siteUrl,
-    siteName: 'SLNS Fresh Sea Foods',
+    siteName: 'SLNS Sea Foods & Pickles',
     locale: 'en_IN',
     type: 'website',
     images: [
@@ -60,14 +71,14 @@ export const metadata = {
         url: '/images/hero-banner.jpg',
         width: 1200,
         height: 630,
-        alt: 'SLNS Fresh Sea Foods',
+        alt: 'SLNS Sea Foods & Pickles',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SLNS Fresh Sea Foods',
-    description: 'Fresh fish, prawns, crabs & seafood dishes delivered to your doorstep.',
+    title: 'SLNS Sea Foods & Pickles',
+    description: 'Fresh fish, prawns, crabs, pickles & seafood dishes delivered to your doorstep in Amalapuram.',
     images: ['/images/hero-banner.jpg'],
   },
 };

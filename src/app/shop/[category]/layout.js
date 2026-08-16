@@ -2,7 +2,7 @@
 // Generates SEO metadata for each shop category page
 
 export async function generateMetadata({ params }) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://slnsfresh.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.slnsseafoodsandpickles.in';
 
   const CATEGORY_SEO = {
     fish: {
