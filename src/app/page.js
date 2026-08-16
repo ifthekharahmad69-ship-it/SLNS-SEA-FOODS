@@ -54,11 +54,11 @@ const localBusinessSchema = {
     '@type': 'OfferCatalog',
     name: 'Fresh Seafood & Pickles Catalog',
     itemListElement: [
-      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Fresh Fish' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Tiger Prawns' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Mud Crabs' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Seafood Pickles' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Andhra Seafood Dishes' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Fresh Fish Supply & Delivery' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Fresh Tiger Prawns Supply' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Live Mud Crabs Supply' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Andhra Seafood Pickles' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Andhra Seafood Dishes Delivery' } },
     ],
   },
   sameAs: [
