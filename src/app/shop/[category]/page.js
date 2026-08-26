@@ -37,7 +37,7 @@ export default function ShopPage() {
   const cats = ['fish', 'prawns', 'crabs', 'pickles'];
 
   return (
-    <div className="page-wrapper">
+    <div className="page-wrapper" style={{ paddingBottom: 'calc(var(--mobile-nav-height, 64px) + 24px)' }}>
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb" aria-label="Breadcrumb">
@@ -49,13 +49,13 @@ export default function ShopPage() {
         </nav>
 
         {/* Page Header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 className="page-title">{meta.icon} {meta.title}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>{meta.desc}</p>
+        <div style={{ marginBottom: '1rem' }}>
+          <h1 className="page-title" style={{ marginBottom: '0.3rem' }}>{meta.icon} {meta.title}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{meta.desc}</p>
         </div>
 
-        {/* Category Tabs */}
-        <div className="filter-tabs" role="tablist" aria-label="Category filters">
+        {/* Category Tabs — horizontal scroll on mobile */}
+        <div className="filter-tabs" role="tablist" aria-label="Category filters" style={{ marginBottom: '0.75rem' }}>
           {cats.map((c) => (
             <Link
               key={c}
@@ -69,39 +69,41 @@ export default function ShopPage() {
           ))}
         </div>
 
-        {/* Controls */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div className="filter-tabs" style={{ marginBottom: 0, gap: '0.5rem' }}>
-              {[['all', 'All'], ['raw', '🐟 Fresh Seafood']].map(([v, l]) => (
-                <button
-                  key={v}
-                  className={`filter-tab${typeFilter === v ? ' active' : ''}`}
-                  onClick={() => setTypeFilter(v)}
-                  style={{ fontSize: '0.82rem' }}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label htmlFor="sort-select" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Sort by:</label>
+        {/* Controls row — sort + type filter */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="filter-tabs" style={{ marginBottom: 0, gap: '0.4rem', flexShrink: 0 }}>
+            {[['all', 'All'], ['raw', '🐟 Fresh Only']].map(([v, l]) => (
+              <button
+                key={v}
+                className={`filter-tab${typeFilter === v ? ' active' : ''}`}
+                onClick={() => setTypeFilter(v)}
+                style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <label htmlFor="sort-select" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Sort:</label>
             <select
               id="sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="form-input"
-              style={{ width: 'auto', height: '36px', padding: '0 12px', fontSize: '0.85rem' }}
+              style={{ width: 'auto', height: '34px', padding: '0 10px', fontSize: '0.82rem' }}
             >
               <option value="default">Default</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
+              <option value="price-asc">Price ↑</option>
+              <option value="price-desc">Price ↓</option>
               <option value="discount">Best Discount</option>
             </select>
           </div>
         </div>
 
         {/* Results count */}
-        <p className="search-results-count" style={{ marginTop: 0 }}>{filtered.length} products found</p>
+        <p className="search-results-count" style={{ marginTop: 0, marginBottom: '0.75rem', fontSize: '0.83rem' }}>
+          {filtered.length} products found
+        </p>
 
         {/* Products Grid */}
         {filtered.length > 0 ? (
