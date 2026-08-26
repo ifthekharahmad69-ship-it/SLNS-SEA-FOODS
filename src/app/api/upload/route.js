@@ -13,9 +13,9 @@ export async function POST(req) {
       return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
     }
 
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'ykomzf1n';
-    const apiKey = process.env.CLOUDINARY_API_KEY || '919529848628671';
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || '9XCCvf39RF6wxBdeHVBqxoxI3jA';
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dx23qpt3';
+    const apiKey = process.env.CLOUDINARY_API_KEY || '986919118829744';
+    const apiSecret = process.env.CLOUDINARY_API_SECRET || 'Pfze_U57evAkcXU6bX_8_WmMNLA';
 
     if (!cloudName || !apiKey || !apiSecret) {
       return NextResponse.json(
