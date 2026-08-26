@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -87,26 +86,46 @@ export default function CartPage() {
                       background: isItemOutOfStock ? '#fff5f5' : undefined,
                     }}
                   >
+                    {/* Product Image */}
                     <div className="cart-item-image">
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={item.image || '/images/ui/placeholder.jpg'}
                         alt={item.name}
-                        fill
-                        sizes="80px"
-                        style={{ objectFit: 'cover', borderRadius: '8px' }}
-                        unoptimized={item.image?.startsWith('http')}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                          borderRadius: '10px',
+                        }}
                       />
                     </div>
+
+                    {/* Product Info */}
                     <div className="cart-item-details">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {/* Name + Out of Stock badge */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '4px' }}>
                         <div className="cart-item-name">{item.name}</div>
                         {isItemOutOfStock && (
-                          <span className="badge-out" style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px' }}>
+                          <span className="badge-out" style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', flexShrink: 0 }}>
                             Out of Stock
                           </span>
                         )}
                       </div>
+
+                      {/* Weight / unit */}
                       <div className="cart-item-weight">{item.weight} · {item.unit}</div>
+
+                      {/* Price */}
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                        ₹{(item.price * item.qty).toLocaleString()}
+                        <span style={{ fontSize: '0.78rem', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '6px' }}>
+                          (₹{item.price}/kg)
+                        </span>
+                      </div>
+
+                      {/* Qty controls */}
                       <div className="cart-item-actions">
                         <div className="qty-control">
                           <button
@@ -131,16 +150,16 @@ export default function CartPage() {
                             aria-label="Increase quantity"
                           >+</button>
                         </div>
-                        <span className="cart-item-price">₹{(item.price * item.qty).toLocaleString()}</span>
+
+                        <button
+                          className="cart-item-remove"
+                          onClick={() => removeItem(item.id)}
+                          aria-label={`Remove ${item.name} from cart`}
+                          style={{ color: isItemOutOfStock ? '#dc2626' : undefined, fontWeight: isItemOutOfStock ? 700 : undefined }}
+                        >
+                          {isItemOutOfStock ? '❌ Remove' : '🗑 Remove'}
+                        </button>
                       </div>
-                      <button
-                        className="cart-item-remove"
-                        onClick={() => removeItem(item.id)}
-                        aria-label={`Remove ${item.name} from cart`}
-                        style={{ color: isItemOutOfStock ? '#dc2626' : undefined, fontWeight: isItemOutOfStock ? 700 : undefined }}
-                      >
-                        {isItemOutOfStock ? '❌ Remove Out of Stock Item' : t('product.remove')}
-                      </button>
                     </div>
                   </div>
                 );

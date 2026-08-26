@@ -1426,7 +1426,7 @@ ul, ol {
   display: grid;
   grid-template-columns: 1fr 380px;
   gap: var(--space-xl);
-  padding: var(--space-xl) 0;
+  padding: var(--space-xl) 0 calc(var(--mobile-nav-height, 64px) + 60px);
 }
 
 .cart-items {
@@ -1437,25 +1437,36 @@ ul, ol {
 
 .cart-item {
   display: flex;
-  gap: var(--space-md);
-  padding: var(--space-md);
+  gap: 1rem;
+  padding: 1rem;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+  border: 1.5px solid var(--border);
+  transition: box-shadow 0.2s ease;
+  align-items: flex-start;
+}
+
+.cart-item:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.09);
 }
 
 .cart-item-image {
-  width: 100px;
-  height: 100px;
-  border-radius: var(--radius-md);
+  width: 130px;
+  height: 140px;
+  border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
+  background: #f8fafc;
+  border: 1px solid var(--border);
 }
 
 .cart-item-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  border-radius: 10px;
 }
 
 .cart-item-details {
@@ -1606,6 +1617,98 @@ ul, ol {
 @media (max-width: 1024px) {
   .cart-layout { grid-template-columns: 1fr; }
   .cart-summary { position: static; }
+}
+
+@media (max-width: 640px) {
+  /* Cart layout stacks vertically, no wasted space */
+  .cart-layout {
+    padding-top: 0.5rem;
+    padding-bottom: calc(var(--mobile-nav-height, 64px) + 60px);
+    gap: 0.75rem;
+  }
+
+  /* Each cart row: image on left, details on right */
+  .cart-item {
+    gap: 0.75rem;
+    padding: 0.85rem;
+    border-radius: 14px;
+    align-items: flex-start;
+  }
+
+  /* Larger image on mobile so product is clearly visible */
+  .cart-item-image {
+    width: 100px;
+    height: 110px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .cart-item-name {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .cart-item-weight {
+    font-size: 0.78rem;
+    margin-bottom: 0.4rem;
+  }
+
+  /* Qty + price row wraps cleanly */
+  .cart-item-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+  }
+
+  .cart-item-price {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .qty-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+
+  .qty-value {
+    width: 42px;
+    font-size: 0.85rem;
+    line-height: 30px;
+  }
+
+  /* Summary card */
+  .cart-summary {
+    border-radius: 14px;
+    padding: 1rem;
+  }
+
+  .cart-summary h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .summary-row {
+    font-size: 0.88rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .summary-row.total {
+    font-size: 1rem;
+  }
+
+  .cart-summary-actions {
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+
+  .cart-summary-actions .btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
 }
 
 /* ======================== CHECKOUT — MOBILE FIRST ======================== */
