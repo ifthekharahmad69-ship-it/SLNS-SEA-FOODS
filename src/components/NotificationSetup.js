@@ -166,7 +166,7 @@ export default function NotificationSetup() {
         disabled={loading}
         style={{
           position: 'fixed',
-          bottom: '80px',
+          bottom: 'calc(var(--mobile-nav-height, 64px) + 16px)',
           left: '16px',
           zIndex: 9980,
           background: 'linear-gradient(135deg, #0f3460, #0f4c75)',

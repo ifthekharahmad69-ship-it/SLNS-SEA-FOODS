@@ -105,35 +105,12 @@ export default function ProductDetailPage() {
             <div
               className="product-main-image"
               onClick={() => setIsZoomed(true)}
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxHeight: '380px',
-                height: '340px',
-                background: '#f8fafc',
-                border: '1px solid var(--border, #e2e8f0)',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'zoom-in',
-                padding: '1rem',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-              }}
               title="Click to view full image zoom"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={currentImage}
                 alt={product.name}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                  borderRadius: '8px',
-                  transition: 'transform 0.3s ease',
-                }}
               />
 
               {discount > 0 && (
