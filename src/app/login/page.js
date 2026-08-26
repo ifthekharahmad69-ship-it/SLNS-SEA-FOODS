@@ -22,16 +22,18 @@ function LoginForm() {
     setLoading(true);
     setError('');
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
       // 1. Sign in with Firebase Auth
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, cleanEmail, password);
       const user = result.user;
 
       // 2. Verify with server that this email is the admin
       const res = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email }),
+        body: JSON.stringify({ email: user.email || cleanEmail }),
       });
 
       const data = await res.json();
@@ -39,19 +41,20 @@ function LoginForm() {
       if (!res.ok) {
         // Not admin — sign out from Firebase too
         await auth.signOut();
-        throw new Error(data.error || 'Access denied');
+        throw new Error(data.error || 'Access denied. Not registered as an admin.');
       }
 
       // 3. Redirect to admin panel
       router.push(from);
       router.refresh();
     } catch (err) {
-      const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
-        ? 'Invalid email or password'
+      console.error('[Admin Login Error]:', err);
+      const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email'
+        ? 'Invalid email or password. Please check your credentials.'
         : err.code === 'auth/user-not-found'
-        ? 'No account found with this email'
+        ? 'No account found with this email in Firebase.'
         : err.code === 'auth/too-many-requests'
-        ? 'Too many attempts. Try again later.'
+        ? 'Too many failed login attempts. Please wait a few minutes and try again.'
         : err.message || 'Login failed. Please try again.';
       setError(msg);
     } finally {

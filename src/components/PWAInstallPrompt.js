@@ -74,17 +74,20 @@ export default function PWAInstallPrompt() {
 
   const handleInstall = async () => {
     setShowToast(false);
-    if (isIOS) {
+    if (isIOS || !deferredPrompt) {
       setShowIOSGuide(true);
       return;
     }
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstalled(true);
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setInstalled(true);
+      }
+      setDeferredPrompt(null);
+    } catch (_) {
+      setShowIOSGuide(true);
     }
-    setDeferredPrompt(null);
   };
 
   const handleDismissToast = () => {
@@ -238,13 +241,17 @@ export default function PWAInstallPrompt() {
             animation: 'pwaIOSSlide 0.3s ease',
           }}>
             <h3 style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '1.05rem', color: 'var(--text-primary, #111)' }}>
-              📲 Install SLNS Fresh on iPhone/iPad
+              📲 Install SLNS Fresh App
             </h3>
-            {[
+            {(isIOS ? [
               { step: '1', icon: '⬆️', text: 'Tap the Share button at the bottom of Safari' },
               { step: '2', icon: '➕', text: 'Scroll down and tap "Add to Home Screen"' },
-              { step: '3', icon: '✅', text: 'Tap "Add" — the app appears on your Home Screen!' },
-            ].map(({ step, icon, text }) => (
+              { step: '3', icon: '✅', text: 'Tap "Add" — the app icon appears on your phone!' },
+            ] : [
+              { step: '1', icon: '⋮', text: 'Tap the 3 dots menu (⋮) at the top right of your browser' },
+              { step: '2', icon: '📲', text: 'Tap "Add to Home Screen" or "Install App"' },
+              { step: '3', icon: '✅', text: 'Confirm "Add" to download the direct app icon!' },
+            ]).map(({ step, icon, text }) => (
               <div key={step} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '0.85rem' }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: '50%',
@@ -253,7 +260,7 @@ export default function PWAInstallPrompt() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>{step}</div>
                 <p style={{ color: 'var(--text-secondary, #555)', fontSize: '0.88rem', margin: 0, lineHeight: 1.5 }}>
-                  {icon} {text}
+                  <strong style={{ marginRight: 4 }}>{icon}</strong> {text}
                 </p>
               </div>
             ))}

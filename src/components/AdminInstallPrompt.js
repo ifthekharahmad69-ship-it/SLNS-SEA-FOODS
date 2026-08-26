@@ -68,12 +68,15 @@ export default function AdminInstallPrompt() {
 
   const handleInstall = async () => {
     setShowToast(false);
-    if (isIOS) { setShowIOSGuide(true); return; }
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') setInstalled(true);
-    setDeferredPrompt(null);
+    if (isIOS || !deferredPrompt) { setShowIOSGuide(true); return; }
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') setInstalled(true);
+      setDeferredPrompt(null);
+    } catch (_) {
+      setShowIOSGuide(true);
+    }
   };
 
   const handleDismissToast = () => {
@@ -225,13 +228,17 @@ export default function AdminInstallPrompt() {
             animation: 'adminIOSSlide 0.3s ease',
           }}>
             <h3 style={{ color: 'white', fontWeight: 700, marginBottom: '1rem', fontSize: '1.05rem' }}>
-              📲 Install Admin App on iPhone/iPad
+              📲 Install Admin App
             </h3>
-            {[
+            {(isIOS ? [
               { step: '1', text: 'Tap the Share button (□↑) at the bottom of Safari' },
               { step: '2', text: 'Scroll down and tap "Add to Home Screen"' },
               { step: '3', text: 'Tap "Add" — Admin App is now on your home screen!' },
-            ].map(({ step, text }) => (
+            ] : [
+              { step: '1', text: 'Tap 3 dots (⋮) top right of your browser' },
+              { step: '2', text: 'Select "Add to Home Screen" or "Install App"' },
+              { step: '3', text: 'Confirm "Add" — Admin App icon installs on your phone!' },
+            ]).map(({ step, text }) => (
               <div key={step} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: '50%',

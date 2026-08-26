@@ -10,17 +10,17 @@ const CartContext = createContext(null);
 function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD_ITEM': {
+      const initialQty = action.qty !== undefined ? action.qty : 0.5;
       const existing = state.items.find((i) => i.id === action.product.id);
       if (existing) {
         return {
           ...state,
           items: state.items.map((i) =>
-            i.id === action.product.id ? { ...i, qty: +(i.qty + 0.5).toFixed(1) } : i
+            i.id === action.product.id ? { ...i, qty: +(i.qty + (action.qty || 0.5)).toFixed(1) } : i
           ),
         };
       }
-      // Start every product at ½ kg
-      return { ...state, items: [...state.items, { ...action.product, qty: 0.5 }] };
+      return { ...state, items: [...state.items, { ...action.product, qty: initialQty }] };
     }
     case 'REMOVE_ITEM':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) };
@@ -121,7 +121,7 @@ export function CartProvider({ children }) {
   }, [state.items]);
 
 
-  const addItem = (product) => dispatch({ type: 'ADD_ITEM', product });
+  const addItem = (product, qty) => dispatch({ type: 'ADD_ITEM', product, qty });
   const removeItem = (id) => dispatch({ type: 'REMOVE_ITEM', id });
   const updateQty = (id, qty) => dispatch({ type: 'UPDATE_QTY', id, qty });
   const clearCart = () => dispatch({ type: 'CLEAR_CART' });

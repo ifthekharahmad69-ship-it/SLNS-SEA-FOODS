@@ -4,11 +4,18 @@
 
 import { NextResponse } from 'next/server';
 
-// Support multiple admin emails (comma-separated in env)
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+const DEFAULT_ADMINS = [
+  'swamynarasimha670@gmail.com',
+  'kopanathibhimaraju@gmail.com',
+  'ifthekharahmad69@gmail.com',
+];
+
+const envAdmins = (process.env.ADMIN_EMAILS || '')
   .split(',')
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
+
+const ADMIN_EMAILS = envAdmins.length > 0 ? envAdmins : DEFAULT_ADMINS;
 
 // POST /api/auth/session — verify email is admin and set cookie
 export async function POST(request) {
